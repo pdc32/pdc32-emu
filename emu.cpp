@@ -5,10 +5,11 @@
 #include <iomanip>
 using namespace std;
 
-const uint32_t programLen = 65536; // 64 KiB
-const uint32_t cacheLen = 131072; // 128 KiB
-const uint32_t dramLen = 33554432; // 32 MiB
+constexpr uint32_t programLen = 65536; // 64 KiB
+constexpr uint32_t cacheLen = 131072; // 128 KiB
+constexpr uint32_t dramLen = 33554432; // 32 MiB
 
+// TODO: add name to more instructions
 enum instruction {
     A0_SET_DRAM_DATA = 0x71,
     A1_SET_CARRY_IN = 0x71,
@@ -71,7 +72,7 @@ uint32_t cacheData = 0;
 uint32_t cache[cacheLen];
 
 uint32_t getCache() {
-    return cache[cacheAddr & (cacheLen-1)];
+    return cache[cacheAddr % cacheLen];
 }
 
 uint32_t program[programLen];
@@ -79,46 +80,57 @@ uint16_t programCounter = 0;
 
 uint32_t (*bus)() = getLiteral;
 
-uint32_t carryIn = 0;
+bool carryIn = false;
 uint32_t a = 0;
 uint32_t b = 0;
 
 uint32_t getAdder() {
-    return carryIn + a + b;
+    const uint32_t cin = carryIn ? 1 : 0;
+    return cin + a + b;
 }
 
-void handleInstruction(uint32_t instruction) {
-    uint8_t type = (instruction & 0xFF0000) >> 16;
-    uint16_t data = instruction & 0xFFFF;
-    dataLiteral = (dataLiteral & 0xFFFF0000) | data;
+void setBus(const uint16_t data) {
+    // TODO: implement more registers
+    if(data == 15) {
+        bus = getLiteral;
+    } else if(data == 7){
+        bus = getCache;
+    } else if(data == 13){
+        bus = getAdder;
+    } else {
+        cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << data << endl;
+        exit(1);
+    }
+}
 
+bool aLessThanb() {
+    return a < b; // TODO: include extra bits that could override this
+}
+
+void handleInstruction(const uint32_t instruction) {
+    const uint8_t type = (instruction & 0xFF0000) >> 16;
+    const uint16_t data = instruction & 0xFFFF;
+    dataLiteral = dataLiteral & 0xFFFF0000 | data;
+
+    // TODO: add more instructions
     if(type == A12_SET_BUS) {
-        if(data == 15) {
-            bus = getLiteral;
-        } else if(data == 7){
-            bus = getCache;
-        } else if(data == 13){
-            bus = getAdder;
-        } else {
-            cerr << "MISSING REG: " << data << endl;
-            exit(1);
-        }
+        setBus(data);
     } else if(type == A10_SET_HIGH) {
-        dataLiteral = (dataLiteral & 0xFFFF) | (data << 16);
+        dataLiteral = dataLiteral & 0xFFFF | data << 16;
     } else if(type == B13_SET_CACHE_ADDR) {
         cacheAddr = bus();
     } else if(type == B12_SET_CACHE_DATA) {
         cacheData = bus();
     } else if(type == B15_WRITE_CACHE) {
-        cache[(cacheAddr & (cacheLen-1))] = cacheData;
+        cache[cacheAddr % cacheLen] = cacheData;
     } else if(type == A1_SET_CARRY_IN) {
-        carryIn = bus() & 8 ? 1 : 0;
+        carryIn = bus() & 8; // Bit 3 is used for carry in
     } else if(type == A9_SET_A) {
         a = bus();
     } else if(type == A14_SET_B) {
         b = bus();
     } else if(type == B8_JL) {
-        if(a<b) programCounter = data;
+        if(aLessThanb()) programCounter = data;
     } else if(type == B7_OUT_DEBUG) {
         cout << "OUT PARALLEL " << bus() << endl;
     } else if(type == A5_JMP) {
@@ -131,6 +143,7 @@ void handleInstruction(uint32_t instruction) {
 
 uint32_t toInstruction(const string& type, const string& argument) {
     uint32_t instruction = 0xF00000;
+    // Set just one low bit of the highest nibble depending on the instruction class
     if(type[0] == 'A') {
         instruction &= ~0x800000;
     } else if(type[0] == 'B') {
@@ -140,7 +153,7 @@ uint32_t toInstruction(const string& type, const string& argument) {
     } else if(type[0] == 'D') {
         instruction &= ~0x100000;
     }
-    string num = type.substr(1);
+    const string num = type.substr(1);
     instruction |= stoi(num) << 16;
 
     if(!argument.empty()) {
@@ -202,7 +215,7 @@ A12 15
 A5 5)program", 0);
 
     while(true) {
-        uint32_t instruction = program[programCounter++];
+        const uint32_t instruction = program[programCounter++];
         handleInstruction(instruction);
     }
 }
