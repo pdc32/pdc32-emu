@@ -5,61 +5,12 @@
 #include <iomanip>
 using namespace std;
 
+#include "instructions.h"
+#include "registers.h"
+
 constexpr uint32_t programLen = 65536; // 64 KiB
 constexpr uint32_t cacheLen = 131072; // 128 KiB
 constexpr uint32_t dramLen = 33554432; // 32 MiB
-
-// TODO: add name to more instructions
-enum instruction {
-    A0_SET_DRAM_DATA = 0x71,
-    A1_SET_CARRY_IN = 0x71,
-    A2_RETURN = 0x72,
-    A3_JLEQ = 0x73,
-    A4_JGEQ = 0x74,
-    A5_JMP = 0x75,
-    A6_INC_DRAM_ADDR = 0x76,
-    A7_SET_DRAM_ADDR = 0x77,
-    A8_JNE = 0x78,
-    A9_SET_A = 0x79,
-    A10_SET_HIGH = 0x7A,
-    A11_WRITE_DRAM = 0x7B,
-    A12_SET_BUS = 0x7C,
-    A13_CALL = 0x7D,
-    A14_SET_B = 0x7E,
-    A15_SET_ALU = 0x7F,
-    B0 = 0xB0,
-    B1 = 0xB1,
-    B2 = 0xB2,
-    B3 = 0xB3,
-    B4 = 0xB4,
-    B5 = 0xB5,
-    B6 = 0xB6,
-    B7_OUT_DEBUG = 0xB7,
-    B8_JL = 0xB8,
-    B9 = 0xB9,
-    B10_JG = 0xBA,
-    B11_JE = 0xBB,
-    B12_SET_CACHE_DATA = 0xBC,
-    B13_SET_CACHE_ADDR = 0xBD,
-    B14 = 0xBE,
-    B15_WRITE_CACHE = 0xBF,
-    C0 = 0xD0,
-    C1 = 0xD1,
-    C2 = 0xD2,
-    C3 = 0xD3,
-    C4 = 0xD4,
-    C5 = 0xD5,
-    C6 = 0xD6,
-    C7 = 0xD7,
-    C8 = 0xD8,
-    C9 = 0xD9,
-    C10 = 0xDA,
-    C11 = 0xDB,
-    C12 = 0xDC,
-    C13 = 0xDD,
-    C14 = 0xDE,
-    C15 = 0xDF,
-};
 
 uint32_t dataLiteral = 0;
 
@@ -71,8 +22,20 @@ uint32_t cacheAddr = 0;
 uint32_t cacheData = 0;
 uint32_t cache[cacheLen];
 
+uint32_t dramAddr = 0;
+uint32_t dramData = 0;
+uint32_t dram[dramLen];
+
 uint32_t getCache() {
     return cache[cacheAddr % cacheLen];
+}
+
+uint32_t getDramData() {
+    return dram[dramAddr % dramLen];
+}
+
+uint32_t getDramAddr() {
+    return dramAddr;
 }
 
 uint32_t program[programLen];
@@ -81,42 +44,108 @@ uint16_t programCounter = 0;
 uint32_t (*bus)() = getLiteral;
 
 bool carryIn = false;
+uint32_t aluFlags = 0;
 uint32_t a = 0;
 uint32_t b = 0;
 
-uint32_t getAdder() {
+uint32_t getAdd() {
     const uint32_t cin = carryIn ? 1 : 0;
     return cin + a + b;
 }
+uint32_t getShiftLeft() {
+    return a << 1;
+}
+uint32_t getShiftRight() {
+    return a >> 1;
+}
+uint32_t getXor() {
+    return a ^ b;
+}
+uint32_t getOr() {
+    return a ^ b;
+}
+uint32_t getAnd() {
+    return a & b;
+}
 
-void setBus(const uint16_t data) {
-    // TODO: implement more registers
-    if(data == 15) {
-        bus = getLiteral;
-    } else if(data == 7){
-        bus = getCache;
-    } else if(data == 13){
-        bus = getAdder;
-    } else {
-        cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << data << endl;
-        exit(1);
+void setBus(const uint8_t reg) {
+    switch(reg) {
+        case REG_DRIVE_SERIAL:
+            // TODO: implement
+            break;
+        case REG_RTC:
+            // TODO: implement
+            break;
+        case REG_UNUSED:
+            bus = nullptr;
+            break;
+        case REG_KBD:
+            // TODO: implement
+            break;
+        case REG_UART:
+            // TODO: implement
+            break;
+        case REG_DRAM_DATA:
+            bus = getDramData;
+            break;
+        case REG_DRAM_ADDR:
+            bus = getDramAddr;
+            break;
+        case REG_CACHE_DATA:
+            bus = getCache;
+            break;
+        case REG_SHIFT_LEFT_A:
+            bus = getShiftLeft;
+            break;
+        case REG_A_AND_B:
+            bus = getAnd;
+            break;
+        case REG_SHIFT_RIGHT_A:
+            bus = getShiftRight;
+            break;
+        case REG_A_XOR_B:
+            bus = getXor;
+            break;
+        case REG_A_OR_B:
+            bus = getOr;
+            break;
+        case REG_A_PLUS_B:
+            bus = getAdd;
+            break;
+        case REG_STATE:
+            // TODO: implement
+            break;
+        case REG_LITERAL:
+            bus = getLiteral;
+            break;
+        default:
+            cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << reg << endl;
+            exit(1);
     }
 }
 
-bool aLessThanb() {
-    return a < b; // TODO: include extra bits that could override this
+bool lessThan() {
+    if (a!=b) {
+        return a < b;
+    } else {
+        bool greaterThan = aluFlags & 1;
+        bool equals = aluFlags & 2;
+        if(equals) return false;
+        if(greaterThan) return false;
+        return true;
+    }
 }
 
 void handleInstruction(const uint32_t instruction) {
     const uint8_t type = (instruction & 0xFF0000) >> 16;
     const uint16_t data = instruction & 0xFFFF;
-    dataLiteral = dataLiteral & 0xFFFF0000 | data;
+    dataLiteral = (dataLiteral & 0xFFFF0000) | data;
 
     // TODO: add more instructions
     if(type == A12_SET_BUS) {
         setBus(data);
     } else if(type == A10_SET_HIGH) {
-        dataLiteral = dataLiteral & 0xFFFF | data << 16;
+        dataLiteral = (dataLiteral & 0xFFFF) | data << 16;
     } else if(type == B13_SET_CACHE_ADDR) {
         cacheAddr = bus();
     } else if(type == B12_SET_CACHE_DATA) {
@@ -129,9 +158,11 @@ void handleInstruction(const uint32_t instruction) {
         a = bus();
     } else if(type == A14_SET_B) {
         b = bus();
+    } else if(type == A15_SET_ALU) {
+        aluFlags = bus();
     } else if(type == B8_JL) {
-        if(aLessThanb()) programCounter = data;
-    } else if(type == B7_OUT_DEBUG) {
+        if(lessThan()) programCounter = data;
+    } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
         cout << "OUT PARALLEL " << bus() << endl;
     } else if(type == A5_JMP) {
         programCounter = data;
@@ -142,16 +173,15 @@ void handleInstruction(const uint32_t instruction) {
 }
 
 uint32_t toInstruction(const string& type, const string& argument) {
-    uint32_t instruction = 0xF00000;
-    // Set just one low bit of the highest nibble depending on the instruction class
+    uint32_t instruction = 0;
     if(type[0] == 'A') {
-        instruction &= ~0x800000;
+        instruction = GROUP_A << 16;
     } else if(type[0] == 'B') {
-        instruction &= ~0x400000;
+        instruction = GROUP_B << 16;
     } else if(type[0] == 'C') {
-        instruction &= ~0x200000;
+        instruction = GROUP_C << 16;
     } else if(type[0] == 'D') {
-        instruction &= ~0x100000;
+        instruction = GROUP_D << 16;
     }
     const string num = type.substr(1);
     instruction |= stoi(num) << 16;
