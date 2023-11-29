@@ -40,6 +40,7 @@ uint32_t getDramAddr() {
 
 uint32_t program[programLen];
 uint16_t programCounter = 0;
+uint16_t returnAddress = 0;
 
 uint32_t (*bus)() = getLiteral;
 
@@ -140,31 +141,97 @@ void handleInstruction(const uint32_t instruction) {
     const uint16_t data = instruction & 0xFFFF;
     dataLiteral = (dataLiteral & 0xFFFF0000) | data;
 
-    // TODO: add more instructions
-    if(type == A12_SET_BUS) {
-        setBus(data);
-    } else if(type == A10_SET_HIGH) {
-        dataLiteral = (dataLiteral & 0xFFFF) | data << 16;
-    } else if(type == B13_SET_CACHE_ADDR) {
-        cacheAddr = bus();
-    } else if(type == B12_SET_CACHE_DATA) {
-        cacheData = bus();
-    } else if(type == B15_WRITE_CACHE) {
-        cache[cacheAddr % cacheLen] = cacheData;
+    if(type == A0_SET_DRAM_DATA) {
+        // TODO: implement
     } else if(type == A1_SET_CARRY_IN) {
         carryIn = bus() & 8; // Bit 3 is used for carry in
+    } else if(type == A2_RETURN) {
+        programCounter = returnAddress;
+    } else if(type == A3_JLEQ) {
+        // TODO: implement
+    } else if(type == A4_JGEQ) {
+        // TODO: implement
+    } else if(type == A5_JMP) {
+        programCounter = data;
+    } else if(type == A6_INC_DRAM_ADDR) {
+        // TODO: implement
+    } else if(type == A7_SET_DRAM_ADDR) {
+        // TODO: implement
+    } else if(type == A8_JNE) {
+        // TODO: implement
     } else if(type == A9_SET_A) {
         a = bus();
+    } else if(type == A10_SET_HIGH) {
+        dataLiteral = (dataLiteral & 0xFFFF) | data << 16;
+    } else if(type == A11_WRITE_DRAM) {
+        // TODO: implement
+    } else if(type == A12_SET_BUS) {
+        setBus(data);
+    } else if(type == A13_CALL) {
+        returnAddress = programCounter;
+        programCounter = bus();
     } else if(type == A14_SET_B) {
         b = bus();
     } else if(type == A15_SET_ALU) {
         aluFlags = bus();
-    } else if(type == B8_JL) {
-        if(lessThan()) programCounter = data;
+    } else if(type == B0_TIMER_SPEAKER_OFV) {
+        // TODO: implement
+    } else if(type == B1_UART_OFV) {
+        // TODO: implement
+    } else if(type == B2_UART_CONFIG) {
+        // TODO: implement
+    } else if(type == B3_UART_TX) {
+        // TODO: implement
+    } else if(type == B5_KBD_TX) {
+        // TODO: implement
+    } else if(type == B6_DATA_ADDR_RTC) {
+        // TODO: implement
     } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
         cout << "OUT PARALLEL " << bus() << endl;
-    } else if(type == A5_JMP) {
-        programCounter = data;
+    } else if(type == B8_JL) {
+        if(lessThan()) programCounter = data;
+    } else if(type == B9_TIMER_SPEAKER_FUNCTION) {
+        // TODO: implement
+    } else if(type == B10_JG) {
+        // TODO: implement
+    } else if(type == B11_JE) {
+        // TODO: implement
+    } else if(type == B12_SET_CACHE_DATA) {
+        cacheData = bus();
+    } else if(type == B13_SET_CACHE_ADDR) {
+        cacheAddr = bus();
+    } else if(type == B14_ON_OFF_ATX) {
+        // TODO: implement
+    } else if(type == B15_WRITE_CACHE) {
+        cache[cacheAddr % cacheLen] = cacheData;
+    } else if(type == C0_TIMER) {
+        // TODO: implement
+    } else if(type == C1_TIME) {
+        // TODO: implement
+    } else if(type == C2_DRIVE_SERIAL_DATA) {
+        // TODO: implement
+    } else if(type == C3_DRIVE_SERIAL_ADDR) {
+        // TODO: implement
+    } else if(type == C4_DRIVE_SERIAL_FUNCTION) {
+        // TODO: implement
+    } else if(type == C7_VGA_TEXT_COLOR) {
+        // TODO: implement
+    } else if(type == C8_VGA_WRITE_VRAM) {
+        // TODO: implement
+    } else if(type == C9_VGA_FUNCTION) {
+        // TODO: implement
+    } else if(type == C10_VGA_TEXT_BLINK) {
+        // TODO: implement
+    } else if(type == C11_VGA_PIXEL_COLOR) {
+        // TODO: implement
+    } else if(type == C12_VGA_TEXT_WRITE) {
+        // TODO: implement
+    } else if(type == C13_VGA_TEXT_CHAR) {
+        // TODO: implement
+    } else if(type == C14_VGA_PIXEL_POS) {
+        // TODO: implement
+    } else if(type == C15_VGA_TEXT_POS) {
+        // TODO: implement
     } else {
         cerr << "UNKNOWN TYPE " << hex << (int)type << endl;
         exit(1);
