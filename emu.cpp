@@ -127,13 +127,12 @@ void setBus(const uint8_t reg) {
 bool lessThan() {
     if (a!=b) {
         return a < b;
-    } else {
-        bool greaterThan = aluFlags & 1;
-        bool equals = aluFlags & 2;
-        if(equals) return false;
-        if(greaterThan) return false;
-        return true;
     }
+    bool greaterThan = aluFlags & 1;
+    bool equals = aluFlags & 2;
+    if(equals) return false;
+    if(greaterThan) return false;
+    return true;
 }
 
 void handleInstruction(const uint32_t instruction) {
@@ -172,79 +171,28 @@ void handleInstruction(const uint32_t instruction) {
     }
 }
 
-uint32_t toInstruction(const string& type, const string& argument) {
-    uint32_t instruction = 0;
-    if(type[0] == 'A') {
-        instruction = GROUP_A << 16;
-    } else if(type[0] == 'B') {
-        instruction = GROUP_B << 16;
-    } else if(type[0] == 'C') {
-        instruction = GROUP_C << 16;
-    } else if(type[0] == 'D') {
-        instruction = GROUP_D << 16;
-    }
-    const string num = type.substr(1);
-    instruction |= stoi(num) << 16;
+void loadProgram(const char* filename) {
+    FILE *fp = fopen(filename, "rb");
 
-    if(!argument.empty()) {
-        instruction |= stoi(argument);
-    }
-    return instruction;
-}
+    fseek(fp, 0, SEEK_END);
+    size_t fileLen = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-void loadProgram(const string &str, uint16_t startAddr) {
-    istringstream inputStream(str);
+    for (int i = 0; i < fileLen/3; i++) {
+        uint8_t bytes[3];
+        fread(bytes, 1, 3, fp);
 
-    string line;
-    while(getline(inputStream, line)) {
-        istringstream lineStream(line);
-        string instructionType;
-        string instructionArgument;
-        lineStream >> instructionType >> instructionArgument;
-        program[startAddr++] = toInstruction(instructionType, instructionArgument);
+        uint32_t word = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
+        program[i] = word;
     }
+    fclose(fp);
 }
 
 int main() {
-    // Program copied from https://www.youtube.com/watch?v=Wf5YIInCZp8&t=94s
-    loadProgram(R"program(A12 15
-A10 0
-B13 1
-B12 0
-B15
-B13 1
-A1 0
-A12 7
-A9
-A12 15
-A10 4
-A14 0
-B8 25
-B13 2
-A12 7
-A9
-A12 15
-A10 0
-A14 1
-A12 13
-B7
-B12
-A12 15
-B15
-A5 0
-B13 1
-A12 7
-A9
-A12 15
-A10 0
-A14 1
-A12 13
-B12
-B15
-A12 15
-A5 5)program", 0);
+    loadProgram("program.bin");
 
-    while(true) {
+    bool quit = false;
+    while(!quit) {
         const uint32_t instruction = program[programCounter++];
         handleInstruction(instruction);
     }
