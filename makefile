@@ -1,36 +1,26 @@
-all: msg vga.exe
-	g++ -std=c++11 emu.cpp -o emu.exe -Wall -O2
-
-CXX?=c++
+CXX := g++
+CXXFLAGS := -std=c++11 -Wall -O2
 SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
-CXXFLAGS?=-std=c++11 -Wall -pedantic -Werror -Wshadow -Wstrict-aliasing -Wstrict-overflow
 
-.PHONY: all msg clean fullclean
+TEST_SOURCE := "prg/uart_test.pdc"
 
+all: emu.exe asm.exe vga.exe
 
-msg:
-	@echo '--- C++11 ---'
+emu.exe: emu.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+asm.exe: asm.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 vga.exe: vga.cpp
-	${CXX} ${CXXFLAGS} -O2 -o $@ $< ${SDL2FLAGS}
+	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
-small: vga.cpp
-	${CXX} ${CXXFLAGS} -Os -o vga.exe $< ${SDL2FLAGS}
-	-strip vga.exe
-	-sstrip vga.exe
+compile_flags.txt: makefile
+	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
 
-debug: vga.cpp
-	${CXX} ${CXXFLAGS} -O0 -g -o vga.exe $< ${SDL2FLAGS}
-
-asm: vga.asm
-
-vga.asm: vga.cpp
-	${CXX} ${CFLAGS} -S -masm=intel -Og -o vga.asm $< ${SDL2FLAGS}
-
-run: msg vga
-	time ./vga.exe
+test: asm.exe emu.exe 
+	cat $(TEST_SOURCE) | ./asm.exe > test.bin 
+	./emu.exe test.bin
 
 clean:
-	rm -f vga.exe *.o vga.asm
-
-fullclean: clean
+	rm -rf emu.exe asm.exe vga.exe compile_flags.txt test.bin
