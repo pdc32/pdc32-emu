@@ -13,8 +13,6 @@ constexpr uint32_t programLen = 65536; // 64 KiB
 uint32_t program[programLen];
 
 uint32_t toInstruction(const string& type, const string& argument) {
-    // cerr << "toInstruction: "  << type << " " << argument << endl;
-
     uint32_t instruction = 0;
     if(type[0] == 'A') {
         instruction = GROUP_A << 16;
@@ -58,9 +56,9 @@ void writeProgramBinaryToStdout(uint16_t baseAddr, uint16_t programLength) {
     for (uint16_t addr = baseAddr; addr < baseAddr + programLength; addr++) {
         uint32_t word = program[addr];
 
-        char b0 = (word >>  0) & 0xFF;
-        char b1 = (word >>  8) & 0xFF;
-        char b2 = (word >> 16) & 0xFF;
+        uint8_t b0 = (word >>  0) & 0xFF;
+        uint8_t b1 = (word >>  8) & 0xFF;
+        uint8_t b2 = (word >> 16) & 0xFF;
 
         cout << b0 << b1 << b2;
     }
