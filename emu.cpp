@@ -129,7 +129,7 @@ void handleInstruction(const uint32_t instruction) {
             << endl;
     } else if(type == B3_UART_TX) {
         uint16_t mask = (1 << (uart_data_bits + 1)) - 1; // lower bits
-        char word = bus() & mask;
+        uint16_t word = bus() & mask;
         char data[5]; // in case uart_data_bits gets corrupted to something invalid, the bus might be 4 hexa chars + NUL
                       //
         if (uart_data_bits <= 8) {
