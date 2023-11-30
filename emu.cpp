@@ -12,11 +12,7 @@ constexpr uint32_t programLen = 65536; // 64 KiB
 constexpr uint32_t cacheLen = 131072; // 128 KiB
 constexpr uint32_t dramLen = 33554432; // 32 MiB
 
-uint32_t dataLiteral = 0;
-
-uint32_t getLiteral() {
-    return dataLiteral;
-}
+uint32_t dataLiteral = 0; // Data from instructions
 
 uint32_t cacheAddr = 0;
 uint32_t cacheData = 0;
@@ -26,114 +22,50 @@ uint32_t dramAddr = 0;
 uint32_t dramData = 0;
 uint32_t dram[dramLen];
 
-uint32_t getCache() {
-    return cache[cacheAddr % cacheLen];
-}
-
-uint32_t getDramData() {
-    return dram[dramAddr % dramLen];
-}
-
-uint32_t getDramAddr() {
-    return dramAddr;
-}
-
 uint32_t program[programLen];
 uint16_t programCounter = 0;
 uint16_t returnAddress = 0;
-
-uint32_t (*bus)() = getLiteral;
 
 bool carryIn = false;
 uint32_t aluFlags = 0;
 uint32_t a = 0;
 uint32_t b = 0;
 
-uint32_t getAdd() {
-    const uint32_t cin = carryIn ? 1 : 0;
-    return cin + a + b;
-}
-uint32_t getShiftLeft() {
-    return a << 1;
-}
-uint32_t getShiftRight() {
-    return a >> 1;
-}
-uint32_t getXor() {
-    return a ^ b;
-}
-uint32_t getOr() {
-    return a ^ b;
-}
-uint32_t getAnd() {
-    return a & b;
-}
+#include "comparisons.h"
 
-void setBus(const uint8_t reg) {
-    switch(reg) {
+bus_register busRegister = REG_LITERAL;
+
+uint32_t bus() {
+    switch (busRegister) {
         case REG_DRIVE_SERIAL:
-            // TODO: implement
-            break;
         case REG_RTC:
-            // TODO: implement
-            break;
         case REG_UNUSED:
-            bus = nullptr;
-            break;
         case REG_KBD:
-            // TODO: implement
-            break;
         case REG_UART:
-            // TODO: implement
-            break;
         case REG_DRAM_DATA:
-            bus = getDramData;
-            break;
+            return dram[dramAddr % dramLen];
         case REG_DRAM_ADDR:
-            bus = getDramAddr;
-            break;
+            return dramAddr;
         case REG_CACHE_DATA:
-            bus = getCache;
-            break;
+            return cache[cacheAddr % cacheLen];
         case REG_SHIFT_LEFT_A:
-            bus = getShiftLeft;
-            break;
+            return a << 1;
         case REG_A_AND_B:
-            bus = getAnd;
-            break;
+            return a & b;
         case REG_SHIFT_RIGHT_A:
-            bus = getShiftRight;
-            break;
+            return a >> 1;
         case REG_A_XOR_B:
-            bus = getXor;
-            break;
+            return a ^ b;
         case REG_A_OR_B:
-            bus = getOr;
-            break;
+            return a | b;
         case REG_A_PLUS_B:
-            bus = getAdd;
-            break;
+            return (carryIn ? 1 : 0) + a + b;
         case REG_STATE:
-            // TODO: implement
-            break;
         case REG_LITERAL:
-            bus = getLiteral;
-            break;
-        default:
-            cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << reg << endl;
-            exit(1);
+            return dataLiteral;
     }
-}
-
-bool lessThan() {
-    if (a!=b) {
-        return a < b;
-    }
-    bool greaterThan = aluFlags & 1;
-    bool equals = aluFlags & 2;
-    if(equals) return false;
-    if(greaterThan) return false;
-    return true;
+    cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << busRegister << endl;
+    exit(1);
 }
 
 void handleInstruction(const uint32_t instruction) {
@@ -142,31 +74,31 @@ void handleInstruction(const uint32_t instruction) {
     dataLiteral = (dataLiteral & 0xFFFF0000) | data;
 
     if(type == A0_SET_DRAM_DATA) {
-        // TODO: implement
+        dramData = bus();
     } else if(type == A1_SET_CARRY_IN) {
         carryIn = bus() & 8; // Bit 3 is used for carry in
     } else if(type == A2_RETURN) {
         programCounter = returnAddress;
     } else if(type == A3_JLEQ) {
-        // TODO: implement
+        if(lessOrEqualThan()) programCounter = data;
     } else if(type == A4_JGEQ) {
-        // TODO: implement
+        if(greaterOrEqualThan()) programCounter = data;
     } else if(type == A5_JMP) {
         programCounter = data;
     } else if(type == A6_INC_DRAM_ADDR) {
-        // TODO: implement
+        dramAddr++;
     } else if(type == A7_SET_DRAM_ADDR) {
-        // TODO: implement
+        dramAddr = bus();
     } else if(type == A8_JNE) {
-        // TODO: implement
+        if(notEqualThan()) programCounter = data;
     } else if(type == A9_SET_A) {
         a = bus();
     } else if(type == A10_SET_HIGH) {
         dataLiteral = (dataLiteral & 0xFFFF) | data << 16;
     } else if(type == A11_WRITE_DRAM) {
-        // TODO: implement
+        dram[dramAddr % dramLen] = dramData;
     } else if(type == A12_SET_BUS) {
-        setBus(data);
+        busRegister = (bus_register)(data & 15);
     } else if(type == A13_CALL) {
         returnAddress = programCounter;
         programCounter = bus();
@@ -193,9 +125,9 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == B9_TIMER_SPEAKER_FUNCTION) {
         // TODO: implement
     } else if(type == B10_JG) {
-        // TODO: implement
+        if(greaterThan()) programCounter = data;
     } else if(type == B11_JE) {
-        // TODO: implement
+        if(equalThan()) programCounter = data;
     } else if(type == B12_SET_CACHE_DATA) {
         cacheData = bus();
     } else if(type == B13_SET_CACHE_ADDR) {
@@ -242,14 +174,14 @@ void loadProgram(const char* filename) {
     FILE *fp = fopen(filename, "rb");
 
     fseek(fp, 0, SEEK_END);
-    size_t fileLen = ftell(fp);
+    const size_t fileLen = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
     for (int i = 0; i < fileLen/3; i++) {
         uint8_t bytes[3];
         fread(bytes, 1, 3, fp);
 
-        uint32_t word = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
+        const uint32_t word = (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
         program[i] = word;
     }
     fclose(fp);

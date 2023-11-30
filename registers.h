@@ -1,7 +1,7 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 
-enum registers {
+enum bus_register {
     REG_DRIVE_SERIAL = 0,
     REG_RTC = 1,
     REG_UNUSED = 2,
