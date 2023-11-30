@@ -3,21 +3,24 @@ CXXFLAGS := -std=c++11 -Wall -O2
 SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
 TEST_SOURCE := "prg/uart_test.pdc"
+TEST_SOURCE_BASE := "prg/jump_call_test.pdc"
+BUILD_DIR := build
 
-all: emu.exe asm.exe
+all: $(BUILD_DIR)/emu.exe $(BUILD_DIR)/asm.exe
 
-emu.exe: emu.cpp vga.cpp
+$(BUILD_DIR)/emu.exe: emu.cpp vga.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
-asm.exe: asm.cpp
+$(BUILD_DIR)/asm.exe: asm.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 compile_flags.txt: makefile
 	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
 
-test: asm.exe emu.exe 
-	cat $(TEST_SOURCE) | ./asm.exe > test.bin 
-	./emu.exe test.bin
+test: $(BUILD_DIR)/asm.exe $(BUILD_DIR)/emu.exe
+	cat $(TEST_SOURCE) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/test.bin
+	cat $(TEST_SOURCE_BASE) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/program.bin
+	./$(BUILD_DIR)/emu.exe $(BUILD_DIR)/test.bin
 
 clean:
-	rm -rf emu.exe asm.exe compile_flags.txt test.bin
+	rm -rf $(BUILD_DIR)/*

@@ -1,0 +1,14 @@
+A12 15 ; Literals
+A13 0x8000 ; Habilita guardado de dirección de retorno
+A5 subrutina ; Llama a la subrutina (puede usarse cualquier salto condicional tmb)
+; continua la ejecución acá
+
+fin: A5 fin otrolabel:
+
+subrutina:
+A13 0x0000
+A5 salto
+salto:
+A2 ; vuelve
+
+A5 otrolabel

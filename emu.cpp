@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <cstring>
 using namespace std;
 
 #include "instructions.h"
@@ -200,7 +201,7 @@ void handleInstruction(const uint32_t instruction) {
 	uint8_t col = bus() & 0x7f;
 	vga_C15_text_position(row, col);
     } else {
-        cerr << "UNKNOWN TYPE " << hex << (int)type << endl;
+        cerr << "UNKNOWN INSTRUCTION " << hex << instruction << " at 0x" << programCounter-1 << endl;
         exit(1);
     }
 }
@@ -208,7 +209,7 @@ void handleInstruction(const uint32_t instruction) {
 void loadProgram(const char* filename) {
     FILE *fp = fopen(filename, "rb");
 
-    if (fp == NULL) {
+    if (fp == nullptr) {
         cerr << "COULD NOT OPEN PROGRAM FILE " << filename << endl;
         exit(1);
     }
@@ -217,7 +218,7 @@ void loadProgram(const char* filename) {
     const size_t fileLen = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    for (int i = 0; i < fileLen/3; i++) {
+    for (size_t i = 0; i < fileLen/3; i++) {
         uint8_t bytes[3];
         fread(bytes, 1, 3, fp);
 
