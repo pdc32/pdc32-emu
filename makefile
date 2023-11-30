@@ -9,5 +9,8 @@ emu.exe: emu.cpp
 asm.exe: asm.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+compile_flags.txt: makefile
+	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
+
 clean:
-	rm -rf emu.exe asm.exe
+	rm -rf emu.exe asm.exe compile_flags.txt
