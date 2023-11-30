@@ -29,7 +29,8 @@ uint32_t toInstruction(const string& type, const string& argument) {
     instruction |= stoi(num) << 16;
 
     if(!argument.empty()) {
-        instruction |= stoi(argument);
+        uint16_t arg = stoi(argument);
+        instruction |= arg;
     }
     return instruction;
 }
