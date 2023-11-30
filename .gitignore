@@ -1,3 +1,4 @@
 .idea/
 *.exe
 compile_flags.txt
+test.bin
