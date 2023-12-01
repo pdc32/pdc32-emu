@@ -22,7 +22,7 @@ enum instruction {
     A10_SET_HIGH     = GROUP_A | 10,
     A11_WRITE_DRAM   = GROUP_A | 11,
     A12_SET_BUS      = GROUP_A | 12,
-    A13_CALL         = GROUP_A | 13,
+    A13_AUTO_RET     = GROUP_A | 13,
     A14_SET_B        = GROUP_A | 14,
     A15_SET_ALU      = GROUP_A | 15,
 

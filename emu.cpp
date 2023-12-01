@@ -30,6 +30,7 @@ uint32_t dram[dramLen];
 uint32_t program[programLen];
 uint16_t programCounter = 0;
 uint16_t returnAddress = 0;
+bool saveReturn = false;
 
 bool carryIn = false;
 uint32_t aluFlags = 0;
@@ -41,6 +42,13 @@ uint8_t uart_data_bits = 8;
 #include "comparisons.h"
 
 bus_register busRegister = REG_LITERAL;
+
+void jumpTo(uint16_t addr) {
+    if(saveReturn) {
+        returnAddress = programCounter;
+    }
+    programCounter = addr;
+}
 
 uint32_t bus() {
     switch (busRegister) {
@@ -87,17 +95,17 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == A2_RETURN) {
         programCounter = returnAddress;
     } else if(type == A3_JLEQ) {
-        if(lessOrEqualThan()) programCounter = data;
+        if(lessOrEqualThan()) jumpTo(data);
     } else if(type == A4_JGEQ) {
-        if(greaterOrEqualThan()) programCounter = data;
+        if(greaterOrEqualThan()) jumpTo(data);
     } else if(type == A5_JMP) {
-        programCounter = data;
+        jumpTo(data);
     } else if(type == A6_INC_DRAM_ADDR) {
         dramAddr++;
     } else if(type == A7_SET_DRAM_ADDR) {
         dramAddr = bus();
     } else if(type == A8_JNE) {
-        if(notEqualThan()) programCounter = data;
+        if(notEqualThan()) jumpTo(data);
     } else if(type == A9_SET_A) {
         a = bus();
     } else if(type == A10_SET_HIGH) {
@@ -106,9 +114,8 @@ void handleInstruction(const uint32_t instruction) {
         dram[dramAddr % dramLen] = dramData;
     } else if(type == A12_SET_BUS) {
         busRegister = (bus_register)(data & 15);
-    } else if(type == A13_CALL) {
-        returnAddress = programCounter;
-        programCounter = bus();
+    } else if(type == A13_AUTO_RET) {
+        saveReturn = bus() & 0x8000;
     } else if(type == A14_SET_B) {
         b = bus();
     } else if(type == A15_SET_ALU) {
@@ -152,13 +159,13 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
         cout << "OUT PARALLEL " << bus() << endl;
     } else if(type == B8_JL) {
-        if(lessThan()) programCounter = data;
+        if(lessThan()) jumpTo(data);
     } else if(type == B9_TIMER_SPEAKER_FUNCTION) {
         // TODO: implement
     } else if(type == B10_JG) {
-        if(greaterThan()) programCounter = data;
+        if(greaterThan()) jumpTo(data);
     } else if(type == B11_JE) {
-        if(equalThan()) programCounter = data;
+        if(equalThan()) jumpTo(data);
     } else if(type == B12_SET_CACHE_DATA) {
         cacheData = bus();
     } else if(type == B13_SET_CACHE_ADDR) {
