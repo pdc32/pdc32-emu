@@ -176,6 +176,7 @@ int display_init() {
 }
 
 void display_update() {
+    static Uint32 last_visit = 0;
     unsigned char* framebuffer = (unsigned char*)bmp->pixels;
     vga_update_framebuffer(framebuffer);
     
@@ -200,11 +201,14 @@ void display_update() {
     SDL_RenderClear(ren);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderPresent(ren);
-    // TODO: le vendria bien un toque de delay, para que no ejecute mas de 60fps,
-    // y poder simular la velocidad real de la PDC32
-    //SDL_Delay(100);
-
     SDL_DestroyTexture(tex);
+
+    // Un toque de delay, para que no ejecute mas de 60fps,
+    // y poder simular la velocidad real de la PDC32
+    while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
+    }
+
+    last_visit = SDL_GetTicks();
 }
 
 void display_teardown() {
