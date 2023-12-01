@@ -7,10 +7,14 @@ using namespace std;
 
 #include "instructions.h"
 #include "registers.h"
+#include "vga.h"
 
 constexpr uint32_t programLen = 65536; // 64 KiB
 constexpr uint32_t cacheLen = 131072; // 128 KiB
 constexpr uint32_t dramLen = 33554432; // 32 MiB
+
+// 4Mhz (baseclock) / 4 (clocks per instruction) / 60hz (display fps)
+constexpr uint32_t instructions_per_display_update = 16666;
 
 uint32_t dataLiteral = 0; // Data from instructions
 
@@ -173,7 +177,9 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C4_DRIVE_SERIAL_FUNCTION) {
         // TODO: implement
     } else if(type == C7_VGA_TEXT_COLOR) {
-        // TODO: implement
+	uint8_t fg = (bus() >> 16) & 0xff;
+	uint8_t bg = (bus() >> 24) & 0xff;
+	vga_C7_text_color(fg, bg);
     } else if(type == C8_VGA_WRITE_VRAM) {
         // TODO: implement
     } else if(type == C9_VGA_FUNCTION) {
@@ -183,13 +189,16 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C11_VGA_PIXEL_COLOR) {
         // TODO: implement
     } else if(type == C12_VGA_TEXT_WRITE) {
-        // TODO: implement
+	uint8_t c = bus() & 0xff;
+	vga_C12_text_write(c);
     } else if(type == C13_VGA_TEXT_CHAR) {
         // TODO: implement
     } else if(type == C14_VGA_PIXEL_POS) {
         // TODO: implement
     } else if(type == C15_VGA_TEXT_POS) {
-        // TODO: implement
+	uint8_t row = (bus() >> 7) & 0x1f;
+	uint8_t col = bus() & 0x7f;
+	vga_C15_text_position(row, col);
     } else {
         cerr << "UNKNOWN TYPE " << hex << (int)type << endl;
         exit(1);
@@ -237,8 +246,16 @@ int main(int argc, char *argv[]) {
     }
 
     bool quit = false;
+    int display_counter = 0;
+
+    display_init();
     while(!quit) {
         const uint32_t instruction = program[programCounter++];
         handleInstruction(instruction);
+	if (display_counter++ == instructions_per_display_update) {
+	    display_update();
+	    display_counter = 0;
+	}
     }
+    display_teardown();
 }

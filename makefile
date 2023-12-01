@@ -4,16 +4,13 @@ SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
 TEST_SOURCE := "prg/uart_test.pdc"
 
-all: emu.exe asm.exe vga.exe
+all: emu.exe asm.exe
 
-emu.exe: emu.cpp
-	$(CXX) $(CXXFLAGS) $^ -o $@
+emu.exe: emu.cpp vga.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 asm.exe: asm.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
-
-vga.exe: vga.cpp
-	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 compile_flags.txt: makefile
 	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
@@ -23,4 +20,4 @@ test: asm.exe emu.exe
 	./emu.exe test.bin
 
 clean:
-	rm -rf emu.exe asm.exe vga.exe compile_flags.txt test.bin
+	rm -rf emu.exe asm.exe compile_flags.txt test.bin
