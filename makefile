@@ -1,12 +1,13 @@
 CXX := g++
 CXXFLAGS := -std=c++11 -Wall -O2
+SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
 TEST_SOURCE := "prg/uart_test.pdc"
 
 all: emu.exe asm.exe
 
-emu.exe: emu.cpp
-	$(CXX) $(CXXFLAGS) $^ -o $@
+emu.exe: emu.cpp vga.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 asm.exe: asm.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
