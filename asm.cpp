@@ -57,10 +57,17 @@ uint32_t toArgument(const std::string &str, bool *isArg) {
     *isArg = true;
     if (str.size() > 2 && str.substr(0, 2) == "0b") {
         istringstream iss(str.substr(2));
-        uint32_t result;
-        if (!(iss >> noskipws >> result) || iss.peek() != EOF) {
-            *isArg = false;
+        uint32_t result = 0;
+        char ch;
+        while (iss >> ch) {
+            if (ch == '0' || ch == '1') {
+                result = (result << 1) + (ch - '0');
+            } else {
+                *isArg = false;
+                return 0;
+            }
         }
+        *isArg = true;
         return result;
     }
     if (str.size() > 2 && str.substr(0, 2) == "0x") {

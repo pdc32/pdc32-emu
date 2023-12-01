@@ -228,7 +228,7 @@ void loadProgram(const char* filename) {
     fclose(fp);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     if (argc >= 2) {
         bool help = false;
 
@@ -253,10 +253,11 @@ int main(int argc, char *argv[]) {
     while(!quit) {
         const uint32_t instruction = program[programCounter++];
         handleInstruction(instruction);
-	if (display_counter++ == instructions_per_display_update) {
-	    display_update();
-	    display_counter = 0;
-	}
+	    if (display_counter++ == instructions_per_display_update) {
+	        display_update();
+	        display_counter = 0;
+	    }
     }
     display_teardown();
+    return 0;
 }
