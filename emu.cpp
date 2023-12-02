@@ -254,16 +254,16 @@ int main(int argc, char **argv) {
     }
 
     bool quit = false;
-    int display_counter = 0;
 
     display_init();
     while(!quit) {
-        const uint32_t instruction = program[programCounter++];
-        handleInstruction(instruction);
-	    if (display_counter++ == instructions_per_display_update) {
-	        display_update();
-	        display_counter = 0;
-	    }
+        if(handle_events()) quit = true;
+
+        for(uint32_t i=0; i<instructions_per_display_update; i++) {
+            const uint32_t instruction = program[programCounter++];
+            handleInstruction(instruction);
+        }
+	    display_update();
     }
     display_teardown();
     return 0;

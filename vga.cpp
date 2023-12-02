@@ -9,6 +9,9 @@
 constexpr uint8_t text_columns = 80;
 constexpr uint8_t text_rows = 30;
 constexpr uint8_t char_height = 16;
+constexpr uint16_t screen_width = 640;
+constexpr uint16_t screen_height = 480;
+uint32_t framebuffer[screen_width*screen_height];
 
 struct vga_character {
     uint8_t character;
@@ -23,6 +26,7 @@ uint8_t text_cursor_col;
 uint8_t text_cursor_row;
 uint8_t text_color_fg;
 uint8_t text_color_bg;
+bool glitchy_video;
 
 void vga_C7_text_color(uint8_t fg, uint8_t bg) {
     text_color_fg = fg;
@@ -33,17 +37,6 @@ void vga_C12_text_write(uint8_t c) {
     text_vram[text_cursor_row][text_cursor_col].character = c;
     text_vram[text_cursor_row][text_cursor_col].fg = text_color_fg;
     text_vram[text_cursor_row][text_cursor_col].bg = text_color_bg;
-    text_cursor_col += 1;
-    if (text_cursor_col >= text_columns) {
-	text_cursor_col = 0;
-	text_cursor_row += 1;
-    }
-
-    if (text_cursor_row >= text_rows) {
-	// TODO: end of screen reached. Should we scroll?
-	// for the time being, we start again at the top
-        text_cursor_row = 0;
-    }
 }
 
 void vga_C15_text_position(uint8_t row, uint8_t col) {
@@ -53,41 +46,54 @@ void vga_C15_text_position(uint8_t row, uint8_t col) {
 
 SDL_Window* win;
 SDL_Renderer* ren;
-SDL_Surface* bmp;
-SDL_Color colors[256];
+SDL_Texture* tex;
+uint32_t pallete[128];
+bool blink_status = false;
 
-void init_pdc32_palette(SDL_Color colors[256]) {
+void init_pdc32_palette(uint32_t colors[128]) {
     //std::cerr << "PAL" << std::endl;
-    for (int j=0; j<256; j++) {
+    for (int j=0; j<128; j++) {
 	    uint8_t v = j;
-	    // por ahora se toman los bits: BBGGGRRR
+	    // por ahora se toman los bits: BBGGGRR
 	    // esta distribucion está completamente inventada
 	    // habría que checkear con el autor
-	    uint8_t red = (v & 0x07) << 5;
-	    uint8_t green = ((v >> 3) & 0x07) << 5; 
-	    uint8_t blue = ((v >> 6) & 0x03) << 6; 
+	    uint8_t red = (v & 0x03) << 6;
+	    uint8_t green = ((v >> 2) & 0x07) << 5;
+	    uint8_t blue = ((v >> 5) & 0x03) << 6;
 	    uint8_t alpha = 255;
-	    colors[j] = { red, green, blue, alpha};
+	    pallete[j] = red | green<<8 | blue << 16 | alpha << 24;
             //std::cerr << std::bitset<8>(red) << ", " << std::bitset<8>(green) << ", " << std::bitset<8>(blue) << std::endl;
     }
     //std::cerr << "/PAL" << std::endl;
 }
 
-void vga_update_framebuffer(unsigned char* framebuffer) {
+void vga_update_framebuffer(uint32_t *framebuffer) {
     int row_start = 0;
     for (int row=0; row < text_rows; row++) {
 	int col_offset = row_start;
 	for (int col=0; col < text_columns; col++) {
 	    uint8_t c = text_vram[row][col].character;
-	    uint8_t fg = text_vram[row][col].fg;
-	    uint8_t bg = text_vram[row][col].bg;
+
+	    uint8_t fg = text_vram[row][col].fg & 0x7f;
+	    uint8_t bg = text_vram[row][col].bg & 0x7f;
+
+		if(blink_status && text_vram[row][col].fg & 0x80) {
+			fg = 0;
+		}
+		if(blink_status && text_vram[row][col].bg & 0x80) {
+			bg = 0;
+		}
+
 	    int offset = col_offset;
 	    for (int y=0; y < char_height; y++) {
 		int byte = charset_rom[c][y];
 		for (int x=0; x < 8; x++) {
 		    uint8_t color = ((byte >> x) & 1 ) ? fg : bg;
-		    // TODO: blinking
-		    framebuffer[offset + 7-x] = color;
+		    framebuffer[offset + 7-x] = pallete[color];
+
+			if(glitchy_video && col % 2 == 0 && x == 7 && rand()%2000 == 0) {
+				framebuffer[offset + 7-x] = pallete[127];
+			}
 		}
 		offset += text_columns * 8;
 	    }
@@ -97,15 +103,23 @@ void vga_update_framebuffer(unsigned char* framebuffer) {
     }
 }
 
-void sdl_loop()
+int handle_events()
 {
     SDL_Event e;
     while (SDL_PollEvent(&e)){
+    	if(e.type == SDL_QUIT) {
+    		return 1;
+    	}
     }
+	return 0;
 }
 
 void load_rom() {
     FILE *fp = fopen("font/pdc32.font", "rb");
+	if(fp == nullptr) {
+		std::cerr << "Cannot open font file" << std::endl;
+		exit(1);
+	}
     fread(charset_rom, 1, 4096, fp);
     fclose(fp);
 }
@@ -133,14 +147,12 @@ int display_init() {
 
     load_rom();
 
-    vga_text_test();
-
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
     }
 
-    win = SDL_CreateWindow("Hello World!", 100, 100, 640, 480, SDL_WINDOW_SHOWN);
+    win = SDL_CreateWindow("PDC32 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, SDL_WINDOW_SHOWN);
     if (win == nullptr) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
@@ -148,71 +160,50 @@ int display_init() {
 
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (ren == nullptr) {
-	std::cerr << "SDL_CreateRenderer Error" << SDL_GetError() << std::endl;
-		if (win != nullptr) {
-			SDL_DestroyWindow(win);
-		}
+		std::cerr << "SDL_CreateRenderer Error" << SDL_GetError() << std::endl;
+		SDL_DestroyWindow(win);
 		SDL_Quit();
         return EXIT_FAILURE;
     }
 
-    bmp = SDL_CreateRGBSurface(0,640,480,8,0,0,0,0);
-    if (bmp == nullptr) {
-	    std::cerr << "SDL_LoadBMP Error: " << SDL_GetError() << std::endl;
-		if (ren != nullptr) {
-			SDL_DestroyRenderer(ren);
-		}
-		if (win != nullptr) {
-			SDL_DestroyWindow(win);
-		}
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
+    if (tex == nullptr) {
+	    std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
+		SDL_DestroyRenderer(ren);
+		SDL_DestroyWindow(win);
 		SDL_Quit();
         return EXIT_FAILURE;
     }
 
-    init_pdc32_palette(colors);
-
-    SDL_SetPaletteColors(bmp->format->palette, colors, 0, 255);
+    init_pdc32_palette(pallete);
     return EXIT_SUCCESS;
 }
 
 void display_update() {
-    static Uint32 last_visit = 0;
-    unsigned char* framebuffer = (unsigned char*)bmp->pixels;
-    vga_update_framebuffer(framebuffer);
-    
-    // TODO: buscar la forma de actualizar la surface sin crearla en cada cuadro
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(ren, bmp);
-    if (tex == nullptr) {
-	std::cerr << "SDL_CreateTextureFromSurface Error: " << SDL_GetError() << std::endl;
-	if (bmp != nullptr) {
-		SDL_FreeSurface(bmp);
-	}
-	if (ren != nullptr) {
-		SDL_DestroyRenderer(ren);
-	}
-	if (win != nullptr) {
-		SDL_DestroyWindow(win);
-	}
-	SDL_Quit();
-        return; //EXIT_FAILURE;
-    }
 
-    sdl_loop();
-    SDL_RenderClear(ren);
+    static Uint32 last_visit = 0;
+    static Uint32 last_blink = 0;
+    vga_update_framebuffer(framebuffer);
+
+	SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderPresent(ren);
-    SDL_DestroyTexture(tex);
 
     // Un toque de delay, para que no ejecute mas de 60fps,
     // y poder simular la velocidad real de la PDC32
     while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
+        SDL_Delay(1);
     }
+	if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
+		blink_status = !blink_status;
+		last_blink = SDL_GetTicks();
+	}
 
     last_visit = SDL_GetTicks();
 }
 
 void display_teardown() {
-    SDL_FreeSurface(bmp);
+	SDL_DestroyTexture(tex);
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();

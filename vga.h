@@ -12,6 +12,9 @@ void display_update();
 // shut it all down
 void display_teardown();
 
+// handle mouse/kbd/quit events, returns non zero on exit
+int handle_events();
+
 // ----------------------------------
 
 // implementation of PDC32 VGA opcodes

@@ -1,34 +1,59 @@
-C15 0x0000 ; topleft character
+A12 15 ; Literals
 
 loop_here:
+
+C15 0x0000 ; topleft character
 
 A10 0x0007 ; red on black
 C7         ; set colors
 C12 0x50    ; write P character
 
+C15 0x0001 ; topleft character+1
+
 A10 0x0038 ; green on black
 C7         ; set colors
 C12 0x44    ; write D character
 
-A10 0x00C9 ; brighter blue on black
+C15 0x0002 ; topleft character+2
+
+A10 0x0049 ; brighter blue on black
 C7         ; set colors
 C12 0x43   ; write C character
 
-A10 0x00ff ; white on black
+C15 0x0003 ; topleft character+3
+
+A10 0x007f ; white on black
 C7         ; set colors
 C12 0x33   ; write 3 character
 
-A10 0x00ff ; white on black
+C15 0x0004 ; topleft character+4
+
+A10 0x007f ; white on black
 C7         ; set colors
 C12 0x32   ; write 2 character
+
+C15 0x0005 ; topleft character+5
 
 A10 0x003F ; yellow on black
 C7         ; set colors
 C12 255    ; write special character
 
+C15 0x0006 ; topleft character+6
+
 A10 0x0000 ; black on black
 C7         ; set colors
 C12 32     ; write <space> character
 
+C15 0x0007 ; topleft character+7
+
+A10 0xff00 ; black on blinking white
+C7         ; set colors
+C12 1   ; write face
+
+C15 0x0008 ; topleft character+8
+
+A10 0x00ff ; blinking white on black
+C7         ; set colors
+C12 3   ; write face
 
 A5 loop_here
