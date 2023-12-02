@@ -1,4 +1,5 @@
 A12 15 ; Literals
+C10 0b1000000000000 ; Enable blink
 
 loop_here:
 
@@ -16,19 +17,19 @@ C12 0x44    ; write D character
 
 C15 0x0002 ; topleft character+2
 
-A10 0x0049 ; brighter blue on black
+A10 0x00C0 ; brighter blue on black (with blink)
 C7         ; set colors
 C12 0x43   ; write C character
 
 C15 0x0003 ; topleft character+3
 
-A10 0x007f ; white on black
+A10 0x00FF ; white on black
 C7         ; set colors
 C12 0x33   ; write 3 character
 
 C15 0x0004 ; topleft character+4
 
-A10 0x007f ; white on black
+A10 0x00FF ; white on black
 C7         ; set colors
 C12 0x32   ; write 2 character
 
@@ -46,7 +47,7 @@ C12 32     ; write <space> character
 
 C15 0x0007 ; topleft character+7
 
-A10 0xff00 ; black on blinking white
+A10 0x8700 ; black on blinking red
 C7         ; set colors
 C12 1   ; write face
 

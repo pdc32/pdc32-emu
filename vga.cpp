@@ -27,6 +27,7 @@ uint8_t text_cursor_row;
 uint8_t text_color_fg;
 uint8_t text_color_bg;
 bool glitchy_video;
+bool enable_blink = false;
 
 void vga_C7_text_color(uint8_t fg, uint8_t bg) {
     text_color_fg = fg;
@@ -44,22 +45,26 @@ void vga_C15_text_position(uint8_t row, uint8_t col) {
     text_cursor_col = col;
 }
 
+void vga_C10_blink(bool enable) {
+	enable_blink = enable;
+}
+
 SDL_Window* win;
 SDL_Renderer* ren;
 SDL_Texture* tex;
-uint32_t pallete[128];
+uint32_t pallete[256];
 bool blink_status = false;
 
-void init_pdc32_palette(uint32_t colors[128]) {
+void init_pdc32_palette(uint32_t colors[256]) {
     //std::cerr << "PAL" << std::endl;
-    for (int j=0; j<128; j++) {
+    for (int j=0; j<256; j++) {
 	    uint8_t v = j;
-	    // por ahora se toman los bits: BBGGGRR
+	    // por ahora se toman los bits: BBGGGRRR
 	    // esta distribucion está completamente inventada
 	    // habría que checkear con el autor
-	    uint8_t red = (v & 0x03) << 6;
-	    uint8_t green = ((v >> 2) & 0x07) << 5;
-	    uint8_t blue = ((v >> 5) & 0x03) << 6;
+	    uint8_t red = (v & 0x07) << 5;
+	    uint8_t green = ((v >> 3) & 0x07) << 5;
+	    uint8_t blue = ((v >> 6) & 0x03) << 6;
 	    uint8_t alpha = 255;
 	    pallete[j] = red | green<<8 | blue << 16 | alpha << 24;
             //std::cerr << std::bitset<8>(red) << ", " << std::bitset<8>(green) << ", " << std::bitset<8>(blue) << std::endl;
@@ -74,14 +79,16 @@ void vga_update_framebuffer(uint32_t *framebuffer) {
 	for (int col=0; col < text_columns; col++) {
 	    uint8_t c = text_vram[row][col].character;
 
-	    uint8_t fg = text_vram[row][col].fg & 0x7f;
-	    uint8_t bg = text_vram[row][col].bg & 0x7f;
+	    uint8_t fg = text_vram[row][col].fg;
+	    uint8_t bg = text_vram[row][col].bg;
 
-		if(blink_status && text_vram[row][col].fg & 0x80) {
-			fg = 0;
-		}
-		if(blink_status && text_vram[row][col].bg & 0x80) {
-			bg = 0;
+		if(enable_blink && blink_status) {
+			if(text_vram[row][col].fg & 0x80) {
+				fg = 0;
+			}
+			if(text_vram[row][col].bg & 0x80) {
+				bg = 0;
+			}
 		}
 
 	    int offset = col_offset;
@@ -166,7 +173,7 @@ int display_init() {
         return EXIT_FAILURE;
     }
 
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
     if (tex == nullptr) {
 	    std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
 		SDL_DestroyRenderer(ren);

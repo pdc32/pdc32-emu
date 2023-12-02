@@ -193,7 +193,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C9_VGA_FUNCTION) {
         // TODO: implement
     } else if(type == C10_VGA_TEXT_BLINK) {
-        // TODO: implement
+        vga_C10_blink(bus() & blink_bit);
     } else if(type == C11_VGA_PIXEL_COLOR) {
         // TODO: implement
     } else if(type == C12_VGA_TEXT_WRITE) {
@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
             const uint32_t instruction = program[programCounter++];
             handleInstruction(instruction);
         }
-	    display_update();
+        display_update();
     }
     display_teardown();
     return 0;
