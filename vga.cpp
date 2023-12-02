@@ -159,7 +159,7 @@ int display_init() {
         return EXIT_FAILURE;
     }
 
-    win = SDL_CreateWindow("PDC32 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, SDL_WINDOW_SHOWN);
+    win = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, SDL_WINDOW_SHOWN);
     if (win == nullptr) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
@@ -186,10 +186,22 @@ int display_init() {
     return EXIT_SUCCESS;
 }
 
-void display_update() {
+void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uint32 executed_instructions) {
+	float avg_fps = frames / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+	float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+
+	char title[100];
+	snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
+
+	SDL_SetWindowTitle(window, title);
+}
+
+void display_update(uint32_t *executed_instructions) {
 
     static Uint32 last_visit = 0;
     static Uint32 last_blink = 0;
+    static Uint32 fps_ticks = 0;
+    static Sint32 frames = 0;
     vga_update_framebuffer(framebuffer);
 
 	SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
@@ -204,6 +216,16 @@ void display_update() {
 	if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
 		blink_status = !blink_status;
 		last_blink = SDL_GetTicks();
+	}
+
+	frames++;
+	if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
+		update_window_title(win, frames, fps_ticks, *executed_instructions);
+		*executed_instructions = 0;
+
+		// Reset variables for the next second
+		fps_ticks = SDL_GetTicks();
+		frames = 0;
 	}
 
     last_visit = SDL_GetTicks();

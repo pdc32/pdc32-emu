@@ -1,0 +1,20 @@
+A12 15 ; Literals
+
+loop:
+B0 18181 ; 440 Hz aprox
+B9 0b010000 ; Enable timer and speaker output
+
+A13 0x8000 ; Habilita guardado de dirección de retorno
+A5 delay ; Llama a la subrutina
+
+B0 8000 ; 1000 Hz aprox
+
+A13 0x8000 ; Habilita guardado de dirección de retorno
+A5 delay ; Llama a la subrutina
+
+A5 loop
+
+delay:
+A13 0x0000 ; Deshabilita subrutinas
+
+A2 ; vuelve al programa principal

@@ -9,6 +9,7 @@ using namespace std;
 #include "instructions.h"
 #include "registers.h"
 #include "vga.h"
+#include "spk.h"
 
 constexpr uint32_t programLen = 32768; // 32 K * 3 bytes
 constexpr uint32_t cacheLen = 131072; // 128 KiB
@@ -131,7 +132,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == A15_SET_ALU) {
         aluFlags = bus() & 0b111;
     } else if(type == B0_TIMER_SPEAKER_OFV) {
-        // TODO: implement
+        spk_b0_timer_ovf(bus());
     } else if(type == B1_UART_OFV) {
         auto speed = 24000000 / bus();
         cout << "UART OFV: speed=" << speed << " bps (* might need more math)" << endl;
@@ -171,7 +172,9 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == B8_JL) {
         if(lessThan()) jumpTo(data);
     } else if(type == B9_TIMER_SPEAKER_FUNCTION) {
-        // TODO: implement
+        const bool on = bus() & 0x10;
+        const bool mute = bus() & 0x20;
+        spk_b9_timer_config(on, mute);
     } else if(type == B10_JG) {
         if(greaterThan()) jumpTo(data);
     } else if(type == B11_JE) {
@@ -266,14 +269,18 @@ int main(int argc, char **argv) {
     bool quit = false;
 
     display_init();
+    spk_init();
+    uint32_t executed_instructions = 0;
     while(!quit) {
         if(handle_events()) quit = true;
 
         for(uint32_t i=0; i<instructions_per_display_update; i++) {
             const uint32_t instruction = program[programCounter++];
             handleInstruction(instruction);
+            spk_process();
+            executed_instructions++;
         }
-        display_update();
+        display_update(&executed_instructions);
     }
     display_teardown();
     return 0;
