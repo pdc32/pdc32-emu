@@ -193,7 +193,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C9_VGA_FUNCTION) {
         // TODO: implement
     } else if(type == C10_VGA_TEXT_BLINK) {
-        // TODO: implement
+        vga_C10_blink(bus() & blink_bit);
     } else if(type == C11_VGA_PIXEL_COLOR) {
         // TODO: implement
     } else if(type == C12_VGA_TEXT_WRITE) {
@@ -254,16 +254,16 @@ int main(int argc, char **argv) {
     }
 
     bool quit = false;
-    int display_counter = 0;
 
     display_init();
     while(!quit) {
-        const uint32_t instruction = program[programCounter++];
-        handleInstruction(instruction);
-	    if (display_counter++ == instructions_per_display_update) {
-	        display_update();
-	        display_counter = 0;
-	    }
+        if(handle_events()) quit = true;
+
+        for(uint32_t i=0; i<instructions_per_display_update; i++) {
+            const uint32_t instruction = program[programCounter++];
+            handleInstruction(instruction);
+        }
+        display_update();
     }
     display_teardown();
     return 0;
