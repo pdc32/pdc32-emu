@@ -1,7 +1,8 @@
 import os
 from intelhex import IntelHex
 
-fw_filenames = [fn for fn in os.listdir(".") if fn.endswith(".hex")]
+fw_filenames = ["Firmware_PDC32_B.hex", "Firmware_PDC32_C.hex", "Firmware_PDC32_A.hex"]
+firmware_size_words = 32*1024;
 
 firmwares = []
 
@@ -10,12 +11,10 @@ for fn in fw_filenames:
     ih.loadhex(fn)
     firmwares.append(ih)
 
-out = []
+out = bytearray()
 
-for n in range(len(firmwares[0])):
+for n in range(firmware_size_words):
     for j in range(3):
-        out.append(chr(firmwares[2-j][n]))
+        out.append(firmwares[j][n])
 
-
-q = "".join(out)
-open("PDC32.firmware", "wb").write(q)
+open("PDC32.firmware", "wb").write(out)
