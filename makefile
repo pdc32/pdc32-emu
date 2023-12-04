@@ -1,40 +1,40 @@
+# test name for `make test` (overridable by `make test TESTNAME=spk`)
+TESTNAME := vga
+
 CXX := g++
 CXXFLAGS := -std=c++11 -Wall -O2
 SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
-TEST_SOURCE := prg/uart_test.pdc
-TEST_SOURCE_BASE := prg/jump_call_test.pdc
-TEST_SOURCE_VGA := prg/vga_test.pdc
-TEST_SOURCE_SPK := prg/spk_test.pdc
 BUILD_DIR := build
 
-all: $(BUILD_DIR)/emu.exe $(BUILD_DIR)/asm.exe
+EMU := $(BUILD_DIR)/emu.exe
+ASM := $(BUILD_DIR)/asm.exe
 
-$(BUILD_DIR)/emu.exe: emu.cpp vga.cpp spk.cpp
+TEST_BIN := $(BUILD_DIR)/$(TESTNAME)_test.bin
+
+all: $(EMU) $(ASM)
+
+$(EMU): emu.cpp vga.cpp spk.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
-$(BUILD_DIR)/asm.exe: asm.cpp
+$(ASM): asm.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(BUILD_DIR)/%.bin: prg/%.pdc $(ASM)
+	cat $< | $(ASM) > $@
+
+test: $(EMU) $(TEST_BIN)
+	$(EMU) $(TEST_BIN)
+
+testall: 
+	make test TESTNAME=base
+	make test TESTNAME=jump_call
+	make test TESTNAME=spk
+	make test TESTNAME=vga
+	make test TESTNAME=uart # crashes
 
 compile_flags.txt: makefile
 	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
-
-$(BUILD_DIR)/test.bin: $(TEST_SOURCE) ./$(BUILD_DIR)/asm.exe
-	cat $(TEST_SOURCE) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/test.bin
-
-$(BUILD_DIR)/program.bin: $(TEST_SOURCE_BASE) ./$(BUILD_DIR)/asm.exe
-	cat $(TEST_SOURCE_BASE) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/program.bin
-
-$(BUILD_DIR)/test_vga.bin: $(TEST_SOURCE_VGA) ./$(BUILD_DIR)/asm.exe
-	cat $(TEST_SOURCE_VGA) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/test_vga.bin
-
-$(BUILD_DIR)/test_spk.bin: $(TEST_SOURCE_SPK) ./$(BUILD_DIR)/asm.exe
-	cat $(TEST_SOURCE_SPK) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/test_spk.bin
-
-test: $(BUILD_DIR)/asm.exe $(BUILD_DIR)/emu.exe $(BUILD_DIR)/test.bin $(BUILD_DIR)/program.bin $(BUILD_DIR)/test_vga.bin $(BUILD_DIR)/test_spk.bin
-	./$(BUILD_DIR)/emu.exe $(BUILD_DIR)/test_vga.bin
-
-all: $(BUILD_DIR)/asm.exe $(BUILD_DIR)/emu.exe
 
 clean:
 	rm -rf $(BUILD_DIR)/*
