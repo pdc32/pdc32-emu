@@ -5,8 +5,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <bitset>
-#include <stdio.h>
+#include <queue>
 
+#include "vga.h"
 #include "keyboard/scancodes.cpp"
 
 constexpr uint8_t text_columns = 80;
@@ -47,7 +48,7 @@ void vga_C12_text_write() {
 }
 
 void vga_C13_set_char(uint8_t character) {
-	vga_char = character;
+    vga_char = character;
 }
 
 void vga_C15_text_position(uint8_t row, uint8_t col) {
@@ -123,10 +124,10 @@ void vga_update_framebuffer(uint32_t *framebuffer) {
 char hexbuf[40];
 
 const char* hexdo(const char* sig_code) {
-    unsigned char *code = (unsigned char*) sig_code;
+    unsigned char* code = (unsigned char*) sig_code;
     int n = 0;
     while(code[n] != 0) {
-        sprintf(hexbuf + n*2, "%02x", code[n]);
+        snprintf(hexbuf + n*2, 3, "%02x", code[n]);
         n++;
     }
 
@@ -135,11 +136,13 @@ const char* hexdo(const char* sig_code) {
 
 void PrintKeyInfo( SDL_KeyboardEvent *key ) {
     const PS2_scancode& code = ps2_map.at(key->keysym.scancode);
-    if( key->type == SDL_KEYUP )
-        printf( "Release:- %s", hexdo(code.key_break ));
-    else
-        printf( "Press:- %s", hexdo(code.key_make ));
-    printf( "\n" );
+    if( key->type == SDL_KEYUP ) {
+        //std::cerr << "Key release: " << hexdo(code.key_break) << std::endl;
+        keyboard_queue(code.key_break);
+    } else {
+        //std::cerr << "Key press: " << hexdo(code.key_make) << std::endl;
+        keyboard_queue(code.key_make);
+    }
 }
 
 int handle_events()
@@ -161,6 +164,12 @@ int handle_events()
                 break;
         }
     }
+
+    int keycode = keyboard_get_byte();
+    if (keycode) {
+        std::cerr << "Byte in keyboard queue: " << std::hex << keycode << std::endl;
+    }
+    
     return 0;
 }
 
@@ -177,21 +186,21 @@ void load_rom() {
 void vga_text_test() {
     vga_C15_text_position(15, 40);
     vga_C7_text_color(0b111, 0);
-	vga_C13_set_char('P');
+    vga_C13_set_char('P');
     vga_C12_text_write();
     vga_C7_text_color(0b111000, 0);
-	vga_C13_set_char('D');
+    vga_C13_set_char('D');
     vga_C12_text_write();
     vga_C7_text_color(0b11001001, 0);
-	vga_C13_set_char('C');
+    vga_C13_set_char('C');
     vga_C12_text_write();
     vga_C7_text_color(255, 0);
-	vga_C13_set_char('3');
+    vga_C13_set_char('3');
     vga_C12_text_write();
-	vga_C13_set_char('2');
+    vga_C13_set_char('2');
     vga_C12_text_write();
     vga_C7_text_color(0b111111, 0);
-	vga_C13_set_char(255);
+    vga_C13_set_char(255);
     vga_C12_text_write();
 }
 
@@ -236,13 +245,13 @@ int display_init() {
 }
 
 void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uint32 executed_instructions) {
-	float avg_fps = frames / ((SDL_GetTicks() - start_ticks) / 1000.0f);
-	float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+    float avg_fps = frames / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+    float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
 
-	char title[100];
-	snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
+    char title[100];
+    snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
 
-	SDL_SetWindowTitle(window, title);
+    SDL_SetWindowTitle(window, title);
 }
 
 void display_update(uint32_t *executed_instructions) {
@@ -267,15 +276,15 @@ void display_update(uint32_t *executed_instructions) {
         last_blink = SDL_GetTicks();
     }
 
-	frames++;
-	if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
-		update_window_title(win, frames, fps_ticks, *executed_instructions);
-		*executed_instructions = 0;
+    frames++;
+    if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
+        update_window_title(win, frames, fps_ticks, *executed_instructions);
+        *executed_instructions = 0;
 
-		// Reset variables for the next second
-		fps_ticks = SDL_GetTicks();
-		frames = 0;
-	}
+        // Reset variables for the next second
+        fps_ticks = SDL_GetTicks();
+        frames = 0;
+    }
 
     last_visit = SDL_GetTicks();
 }
@@ -288,11 +297,31 @@ void display_teardown() {
 }
 
 uint8_t vga_get_mode() {
-	return vga_mode;
+    return vga_mode;
 }
 
 void vga_C9_set_mode(uint8_t mode) {
-	vga_mode = mode;
+    vga_mode = mode;
+}
+
+std::queue<uint8_t> keycodes_queue;
+void keyboard_queue(const char* codes) {
+    uint8_t* bytes = (uint8_t*) codes;
+    uint8_t b = *bytes++;
+    while(b != 0) {
+        keycodes_queue.push(b);
+        b = *bytes++;
+    }
+}
+
+uint8_t keyboard_get_byte() {
+    if (keycodes_queue.empty()) {
+        return 0;
+    } else {
+        uint8_t b = keycodes_queue.front();
+        keycodes_queue.pop();
+        return b;
+    }
 }
 
 void keyboard_B5_send(uint8_t command) {
