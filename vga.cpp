@@ -26,6 +26,8 @@ uint8_t text_cursor_col;
 uint8_t text_cursor_row;
 uint8_t text_color_fg;
 uint8_t text_color_bg;
+uint8_t vga_mode = 0;
+
 bool glitchy_video;
 bool enable_blink = false;
 
@@ -236,4 +238,12 @@ void display_teardown() {
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
+}
+
+uint8_t vga_get_mode() {
+	return vga_mode;
+}
+
+void vga_C9_set_mode(uint8_t mode) {
+	vga_mode = mode;
 }

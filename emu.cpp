@@ -10,53 +10,55 @@ using namespace std;
 #include "registers.h"
 #include "vga.h"
 #include "spk.h"
+#include "alu.h"
 
-constexpr uint32_t programLen = 32768; // 32 K * 3 bytes
-constexpr uint32_t cacheLen = 131072; // 128 KiB
-constexpr uint32_t dramLen = 33554432; // 32 MiB
+constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
+constexpr uint32_t cache_len = 131072; // 128 KiB
+constexpr uint32_t dram_len = 33554432; // 32 MiB
 
 // 4Mhz (baseclock) / 4 (clocks per instruction) / 60hz (display fps)
 constexpr uint32_t instructions_per_display_update = 16666;
 
-uint32_t dataLiteral = 0; // Data from instructions
+uint32_t data_literal = 0; // Data from instructions
 
-uint32_t cacheAddr = 0;
-uint32_t cacheData = 0;
-uint32_t cache[cacheLen];
+uint32_t cache_addr = 0;
+uint32_t cache_data = 0;
+uint32_t cache[cache_len];
 
-uint32_t dramAddr = 0;
-uint32_t dramData = 0;
-uint32_t dram[dramLen];
+uint32_t dram_addr = 0;
+uint32_t dram_data = 0;
+uint32_t dram[dram_len];
 
-uint32_t program[programLen];
-uint16_t programCounter = 0;
-uint16_t returnAddress = 0;
-bool saveReturn = false;
+uint32_t program[program_len];
+uint16_t program_counter = 0;
+uint16_t return_address = 0;
+bool save_return = false;
 
-bool carryIn = false;
-uint32_t aluFlags = 0;
-uint32_t a = 0;
-uint32_t b = 0;
+constexpr uint32_t power_on_bit = 1<<11;
+bool power_on = false;
 
 uint8_t uart_data_bits = 8;
 
-#include "comparisons.h"
+bus_register bus_selector = REG_LITERAL;
+bool debug = false;
 
-bus_register busRegister = REG_LITERAL;
-
-void jumpTo(uint16_t addr) {
-    if(addr > programLen) {
-        cerr << "At " << programCounter-1 << " trying to jump to invalid address " << addr << endl;
+void jump_to(uint16_t addr) {
+    if(addr > program_len) {
+        cerr << "At " << program_counter-1 << " trying to jump to invalid address " << addr << endl;
         exit(1);
     }
-    if(saveReturn) {
-        returnAddress = programCounter;
+    if(save_return) {
+        return_address = program_counter;
     }
-    programCounter = addr;
+    program_counter = addr;
+}
+
+uint32_t get_state() {
+    return alu_get_state() | (spk_ovf() ? spk_ovf_bit : 0) | power_on_bit | (vga_get_mode() << vga_mode_offset);
 }
 
 uint32_t bus() {
-    switch (busRegister) {
+    switch (bus_selector) {
         case REG_DRIVE_SERIAL:
             return 0; // TODO: implement
         case REG_RTC:
@@ -68,69 +70,69 @@ uint32_t bus() {
         case REG_UART:
             return 0; // TODO: implement
         case REG_DRAM_DATA:
-            return dram[dramAddr % dramLen];
+            return dram[dram_addr % dram_len];
         case REG_DRAM_ADDR:
-            return dramAddr;
+            return dram_addr;
         case REG_CACHE_DATA:
-            return cache[cacheAddr % cacheLen];
+            return cache[cache_addr % cache_len];
         case REG_SHIFT_LEFT_A:
-            return a << 1;
+            return alu_get_a() << 1;
         case REG_A_AND_B:
-            return a & b;
+            return alu_get_a() & alu_get_b();
         case REG_SHIFT_RIGHT_A:
-            return a >> 1;
+            return alu_get_a() >> 1;
         case REG_A_XOR_B:
-            return a ^ b;
+            return alu_get_a() ^ alu_get_b();
         case REG_A_OR_B:
-            return a | b;
+            return alu_get_a() | alu_get_b();
         case REG_A_PLUS_B:
-            return (carryIn ? 1 : 0) + a + b;
+            return alu_get_sum();
         case REG_STATE:
-            return 0; // TODO: implement
+            return get_state();
         case REG_LITERAL:
-            return dataLiteral;
+            return data_literal;
     }
-    cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << busRegister << endl;
+    cerr << "MISSING IMPLEMENTATION FOR REGISTER: " << bus_selector << endl;
     exit(1);
 }
 
 void handleInstruction(const uint32_t instruction) {
     const uint8_t type = (instruction & 0xFF0000) >> 16;
     const uint16_t data = instruction & 0xFFFF;
-    dataLiteral = (dataLiteral & 0xFFFF0000) | data;
+    data_literal = (data_literal & 0xFFFF0000) | data;
 
     if(type == A0_SET_DRAM_DATA) {
-        dramData = bus();
+        dram_data = bus();
     } else if(type == A1_SET_CARRY_IN) {
-        carryIn = bus() & 8; // Bit 3 is used for carry in
+        alu_set_carry_in(bus() & alu_carry_in_bit);
     } else if(type == A2_RETURN) {
-        programCounter = returnAddress;
+        program_counter = return_address;
     } else if(type == A3_JLEQ) {
-        if(lessOrEqualThan()) jumpTo(data);
+        if(alu_less_or_equal_than()) jump_to(bus() % program_len); else if(debug) printf("JLEQ failed %x %x\n", alu_get_a(), alu_get_b());
     } else if(type == A4_JGEQ) {
-        if(greaterOrEqualThan()) jumpTo(data);
+        if(alu_greater_or_equal_than()) jump_to(bus() % program_len); else if(debug) printf("JGEQ failed %x %x\n", alu_get_a(), alu_get_b());
     } else if(type == A5_JMP) {
-        jumpTo(data);
+        jump_to(bus() % program_len);
     } else if(type == A6_INC_DRAM_ADDR) {
-        dramAddr++;
+        dram_addr++;
     } else if(type == A7_SET_DRAM_ADDR) {
-        dramAddr = bus() % dramLen;
+        dram_addr = bus() % dram_len;
     } else if(type == A8_JNE) {
-        if(notEqualThan()) jumpTo(data);
+        if(alu_not_equal_than()) jump_to(bus() % program_len); else if(debug) printf("JNE failed %x %x\n", alu_get_a(), alu_get_b());
     } else if(type == A9_SET_A) {
-        a = bus();
+        alu_set_a(bus());
     } else if(type == A10_SET_HIGH) {
-        dataLiteral = (dataLiteral & 0xFFFF) | data << 16;
+        data_literal = (data_literal & 0xFFFF) | data << 16;
     } else if(type == A11_WRITE_DRAM) {
-        dram[dramAddr] = dramData;
+        dram[dram_addr] = dram_data;
     } else if(type == A12_SET_BUS) {
-        busRegister = (bus_register)(data & 15);
+        bus_selector = (bus_register)(data & 15);
     } else if(type == A13_AUTO_RET) {
-        saveReturn = bus() & 0x8000;
+        save_return = bus() & 0x8000;
     } else if(type == A14_SET_B) {
-        b = bus();
+        alu_set_b(bus());
     } else if(type == A15_SET_ALU) {
-        aluFlags = bus() & 0b111;
+        alu_set_flags(bus() & alu_flags_bits);
     } else if(type == B0_TIMER_SPEAKER_OFV) {
         spk_b0_timer_ovf(bus());
     } else if(type == B1_UART_OFV) {
@@ -170,23 +172,24 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
         // TODO: implement
     } else if(type == B8_JL) {
-        if(lessThan()) jumpTo(data);
+        if(alu_less_than()) jump_to(bus() % program_len); else if(debug) printf("JL failed %x %x\n", alu_get_a(), alu_get_b());
     } else if(type == B9_TIMER_SPEAKER_FUNCTION) {
-        const bool on = bus() & 0x10;
-        const bool mute = bus() & 0x20;
-        spk_b9_timer_config(on, mute);
+        const bool off = bus() & spk_off_bit;
+        const bool mute = bus() & spk_mute_bit;
+        spk_b9_timer_config(!off, mute);
     } else if(type == B10_JG) {
-        if(greaterThan()) jumpTo(data);
+        if(alu_greater_than()) jump_to(bus() % program_len); else if(debug) printf("JG failed %x %x\n", alu_get_a(), alu_get_b());
     } else if(type == B11_JE) {
-        if(equalThan()) jumpTo(data);
+        if(alu_equal_than()) jump_to(bus() % program_len); else if(debug) printf("JE failed %x %x\n", alu_get_a(), alu_get_b());
     } else if(type == B12_SET_CACHE_DATA) {
-        cacheData = bus();
+        cache_data = bus();
     } else if(type == B13_SET_CACHE_ADDR) {
-        cacheAddr = bus() % cacheLen;
+        cache_addr = bus() % cache_len;
     } else if(type == B14_ON_OFF_ATX) {
-        // TODO: implement
+        power_on = bus() & (1<<11);
+        cout << "Power status changed: " << power_on << endl;
     } else if(type == B15_WRITE_CACHE) {
-        cache[cacheAddr] = cacheData;
+        cache[cache_addr] = cache_data;
     } else if(type == C0_TIMER) {
         // TODO: implement
     } else if(type == C1_TIME) {
@@ -198,30 +201,30 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C4_DRIVE_SERIAL_FUNCTION) {
         // TODO: implement
     } else if(type == C7_VGA_TEXT_COLOR) {
-	uint8_t fg = (bus() >> 16) & 0xff;
-	uint8_t bg = (bus() >> 24) & 0xff;
-	vga_C7_text_color(fg, bg);
+        uint8_t fg = (bus() >> 16) & 0xff;
+        uint8_t bg = (bus() >> 24) & 0xff;
+        vga_C7_text_color(fg, bg);
     } else if(type == C8_VGA_WRITE_VRAM) {
         // TODO: implement
     } else if(type == C9_VGA_FUNCTION) {
-        // TODO: implement
+        vga_C9_set_mode(bus() & vga_C9_mode_bits);
     } else if(type == C10_VGA_TEXT_BLINK) {
-        vga_C10_blink(bus() & blink_bit);
+        vga_C10_blink(bus() & vga_blink_bit);
     } else if(type == C11_VGA_PIXEL_COLOR) {
         // TODO: implement
     } else if(type == C12_VGA_TEXT_WRITE) {
-	uint8_t c = bus() & 0xff;
-	vga_C12_text_write(c);
+        uint8_t c = bus() & 0xff;
+        vga_C12_text_write(c);
     } else if(type == C13_VGA_TEXT_CHAR) {
         // TODO: implement
     } else if(type == C14_VGA_PIXEL_POS) {
         // TODO: implement
     } else if(type == C15_VGA_TEXT_POS) {
-	uint8_t row = (bus() >> 7) & 0x1f;
-	uint8_t col = bus() & 0x7f;
-	vga_C15_text_position(row, col);
+        uint8_t row = (bus() >> 7) & 0x1f;
+        uint8_t col = bus() & 0x7f;
+        vga_C15_text_position(row, col);
     } else {
-        cerr << "UNKNOWN INSTRUCTION " << hex << instruction << " at 0x" << programCounter-1 << endl;
+        cerr << "UNKNOWN INSTRUCTION " << hex << instruction << " at 0x" << program_counter-1 << endl;
         exit(1);
     }
 }
@@ -275,7 +278,10 @@ int main(int argc, char **argv) {
         if(handle_events()) quit = true;
 
         for(uint32_t i=0; i<instructions_per_display_update; i++) {
-            const uint32_t instruction = program[programCounter++];
+            if(debug) {
+                printf("%x %x %x %x %x\n", program_counter, program[program_counter]>>16, program[program_counter] & 0xFFFF, alu_get_a(), alu_get_b());
+            }
+            const uint32_t instruction = program[program_counter++];
             handleInstruction(instruction);
             spk_process();
             executed_instructions++;
