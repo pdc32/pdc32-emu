@@ -1,5 +1,7 @@
 #include "alu.h"
 
+#include <cstdio>
+
 bool carry_in = false;
 uint32_t alu_flags = 0;
 uint32_t a = 0;
@@ -22,10 +24,8 @@ bool alu_less_than() {
     if (a!=b) {
         return a < b;
     }
-    const bool greaterThan = alu_flags & 1;
-    const bool equals = alu_flags & 2;
-    if(equals) return false;
-    if(greaterThan) return false;
+    if(alu_flags & alu_equals_bit) return false;
+    if(alu_flags & alu_greater_than_bit) return false;
     return true;
 }
 
@@ -37,7 +37,7 @@ bool alu_equal_than() {
     if(a != b) {
         return false;
     }
-    return alu_flags & 2; // Equals
+    return alu_flags & alu_equals_bit; // Equals
 }
 
 bool alu_less_or_equal_than() {

@@ -37,15 +37,15 @@ void spk_b0_timer_ovf(uint32_t bus){
     bus &= 0xFFFFFF;
 
     float freq = 8e6 / bus;
-    //cout << "SPK freq set to " << freq << endl;
+    cout << "SPK freq set to " << freq << endl;
     frequency = freq;
     spk_overflow = bus;
 }
 void spk_b9_timer_config(bool on, bool mute){
-    cout << "SPK config: " << (on ? "ON":"OFF") << ", " << (mute ? "SPK":"TMR") << endl;
+    cout << "SPK config: " << (on ? "ON":"OFF") << ", " << (mute ? "TMR":"SPK") << endl;
     spk_on = on;
     spk_mute = mute;
-    if(!spk_on) spk_state = 0;
+    if(!spk_on) spk_state = false;
 }
 void spk_process(){
     // Timer gets decremented 8 times per instruction
