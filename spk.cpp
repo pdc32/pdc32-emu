@@ -42,7 +42,7 @@ void spk_b0_timer_ovf(uint32_t bus){
     spk_overflow = bus;
 }
 void spk_b9_timer_config(bool on, bool mute){
-    //cout << "SPK config: " << (on ? "ON":"OFF") << ", " << (mute ? "SPK":"TMR") << endl;
+    cout << "SPK config: " << (on ? "ON":"OFF") << ", " << (mute ? "SPK":"TMR") << endl;
     spk_on = on;
     spk_mute = mute;
     if(!spk_on) spk_state = 0;
@@ -54,6 +54,9 @@ void spk_process(){
         spk_value = spk_overflow;
         if(spk_on) spk_state = !spk_state;
     }
+}
+bool spk_ovf() {
+    return spk_state && spk_mute;
 }
 
 int spk_init(){

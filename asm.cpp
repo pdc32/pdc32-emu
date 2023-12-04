@@ -13,12 +13,12 @@ using namespace std;
 
 #include "instructions.h"
 
-constexpr uint32_t programLen = 65536; // 64 KiB
-uint32_t program[programLen];
+constexpr uint32_t program_len = 32768; // 64 KiB
+uint32_t program[program_len];
 
-constexpr uint32_t missingLabelAddress = 0x80000000;
+constexpr uint32_t missing_label_address = 0x80000000;
 
-bool isInstructionType(const string& type) {
+bool is_instruction_type(const string& type) {
     if (type.size() == 2 && isdigit(type[1])) {
         return type[0] >= 'A' && type[0] <= 'D';
     }
@@ -29,7 +29,7 @@ bool isInstructionType(const string& type) {
     return false;
 }
 
-uint32_t toInstruction(const string& type, const uint32_t argument) {
+uint32_t to_instruction(const string& type, const uint32_t argument) {
     uint32_t instruction = 0;
     if(type[0] == 'A') {
         instruction = GROUP_A << 16;
@@ -46,15 +46,15 @@ uint32_t toInstruction(const string& type, const uint32_t argument) {
     return instruction;
 }
 
-void removeCommentsAndTrim(string &inputString) {
+void remove_comments(string &inputString) {
     size_t semicolonPos = inputString.find(';');
     if (semicolonPos != string::npos) {
         inputString.erase(semicolonPos);
     }
 }
 
-uint32_t toArgument(const std::string &str, bool *isArg) {
-    *isArg = true;
+uint32_t to_argument(const std::string &str, bool *to_arg) {
+    *to_arg = true;
     if (str.size() > 2 && str.substr(0, 2) == "0b") {
         istringstream iss(str.substr(2));
         uint32_t result = 0;
@@ -63,25 +63,25 @@ uint32_t toArgument(const std::string &str, bool *isArg) {
             if (ch == '0' || ch == '1') {
                 result = (result << 1) + (ch - '0');
             } else {
-                *isArg = false;
+                *to_arg = false;
                 return 0;
             }
         }
-        *isArg = true;
+        *to_arg = true;
         return result;
     }
     if (str.size() > 2 && str.substr(0, 2) == "0x") {
         std::istringstream iss(str.substr(2));
         uint32_t result;
         if (!(iss >> std::hex >> result) || iss.peek() != EOF) {
-            *isArg = false;
+            *to_arg = false;
         }
         return result;
     }
     std::istringstream iss(str);
     uint32_t result;
     if (!(iss >> result) || iss.peek() != EOF) {
-        *isArg = false;
+        *to_arg = false;
     }
     return result;
 }
@@ -97,12 +97,12 @@ uint32_t pc;
 string instructionType;
 bool inInstruction = false;
 
-size_t putLabel(const label &label) {
+size_t put_label(const label &label) {
     labels.push_back(label);
     return labels.size()-1;
 }
 
-int findLabel(const string &name) {
+int find_label(const string &name) {
     for(size_t i=0; i<labels.size(); i++) {
         if(labels[i].name == name) {
             return (int)i;
@@ -111,34 +111,34 @@ int findLabel(const string &name) {
     return -1;
 }
 
-void setLabel(const string &name, const uint32_t address) {
-    int labelIdx = findLabel(name);
+void set_label(const string &name, const uint32_t address) {
+    int labelIdx = find_label(name);
     if(labelIdx == -1) {
-        putLabel((label){name, true, address});
+        put_label((label){name, true, address});
     } else {
         labels[labelIdx].defined = true;
         labels[labelIdx].address = address;
     }
 }
 
-void appendInstruction(uint32_t arg) {
-    program[pc++] = toInstruction(instructionType, arg);
+void append_instruction(uint32_t arg) {
+    program[pc++] = to_instruction(instructionType, arg);
 }
 
-void processLabel(string label) {
+void process_label(string label) {
     label.pop_back(); // Remove ":" from the end
     if (label.empty() || label.find(':') != string::npos) {
         cerr << "Invalid name for label: " + label;
         exit(1);
     }
-    if (isInstructionType(label)) {
+    if (is_instruction_type(label)) {
         cerr << "Found unexpected label with instruction name: " + label;
         exit(1);
     }
-    setLabel(label, pc);
+    set_label(label, pc);
 }
 
-bool processArg(const string &token, uint32_t arg) {
+bool process_arg(const string &token, uint32_t arg) {
     if(!inInstruction) {
         cerr << "Found unexpected argument: " + token;
         exit(1);
@@ -148,65 +148,65 @@ bool processArg(const string &token, uint32_t arg) {
         exit(1);
     }
     inInstruction = false;
-    appendInstruction(arg);
+    append_instruction(arg);
     return false;
 }
 
-void processInstruction(const string &instruction) {
+void process_instruction(const string &instruction) {
     if(inInstruction) { // Previous instruction had no arguments
-        appendInstruction(0);
+        append_instruction(0);
     }
     instructionType = instruction;
     inInstruction = true;
 }
 
-void processReferenceToLabel(const string &label) {
+void process_reference_to_label(const string &label) {
     inInstruction = false;
-    int labelIdx = findLabel(label);
+    int labelIdx = find_label(label);
     if(labelIdx == -1) {
-        labelIdx = putLabel({label, false, 0});
+        labelIdx = put_label({label, false, 0});
     }
     if(labelIdx > 0xFFFF) {
         cerr << "Label index does not fit in 16 bits: " + label;
         exit(1);
     }
-    appendInstruction(missingLabelAddress | labelIdx);
+    append_instruction(missing_label_address | labelIdx);
 }
 
-uint32_t loadProgramFromStdin(uint16_t startAddr) {
+uint32_t load_program_from_stdin(uint16_t startAddr) {
     pc = startAddr;
 
     string line;
-    while(getline(cin, line) && pc <= programLen) {
-        removeCommentsAndTrim(line);
+    while(getline(cin, line) && pc <= program_len) {
+        remove_comments(line);
         if (line.empty()) continue; // skip empty lines
 
         istringstream lineStream(line);
         string token;
         while(lineStream >> token) {
             if(token.find(':') != string::npos) {
-                processLabel(token);
+                process_label(token);
             } else {
                 bool isArg;
-                uint32_t arg = toArgument(token, &isArg);
+                uint32_t arg = to_argument(token, &isArg);
                 if(isArg) {
-                    processArg(token, arg);
-                } else if(isInstructionType(token)) {
-                    processInstruction(token);
+                    process_arg(token, arg);
+                } else if(is_instruction_type(token)) {
+                    process_instruction(token);
                 } else {
-                    processReferenceToLabel(token);
+                    process_reference_to_label(token);
                 }
             }
         }
         if(inInstruction) {
-            appendInstruction(0); // Dummy "0" argument if last opcode doesn't have one
+            append_instruction(0); // Dummy "0" argument if last opcode doesn't have one
         }
     }
 
     return pc;
 }
 
-void updateSymbols() {
+void update_symbols() {
     for (const auto& label : labels) {
         if(!label.defined) {
             cerr << "Missing definition for " << label.name << endl;
@@ -215,14 +215,14 @@ void updateSymbols() {
     }
 
     for (size_t i=0; i<pc; i++) {
-        if(program[i] & missingLabelAddress) { // Address requiring definition
+        if(program[i] & missing_label_address) { // Address requiring definition
             uint16_t labelidx = program[i] & 0xFFFF;
             program[i] = (program[i] & 0x00FF0000) | labels[labelidx].address;
         }
     }
 }
 
-void writeProgramBinaryToStdout(uint16_t baseAddr, uint16_t programLength) {
+void write_program_binary_to_stdout(uint16_t baseAddr, uint16_t programLength) {
     for (uint16_t addr = baseAddr; addr < baseAddr + programLength; addr++) {
         uint32_t word = program[addr];
 
@@ -239,8 +239,8 @@ int main() {
     // Avoids unwanted \r issue when writing binary file to stdout
     setmode(fileno(stdout),O_BINARY);
     #endif
-    loadProgramFromStdin(0);
-    updateSymbols();
-    writeProgramBinaryToStdout(0, pc);
+    load_program_from_stdin(0);
+    update_symbols();
+    write_program_binary_to_stdout(0, pc);
     return 0;
 }
