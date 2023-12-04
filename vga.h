@@ -7,7 +7,7 @@
 int display_init();
 
 // render text buffer into VRAM, blit onto the screen
-void display_update();
+void display_update(uint32_t *executed_instructions);
 
 // shut it all down
 void display_teardown();

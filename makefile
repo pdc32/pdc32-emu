@@ -5,11 +5,12 @@ SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 TEST_SOURCE := prg/uart_test.pdc
 TEST_SOURCE_BASE := prg/jump_call_test.pdc
 TEST_SOURCE_VGA := prg/vga_test.pdc
+TEST_SOURCE_SPK := prg/spk_test.pdc
 BUILD_DIR := build
 
 all: $(BUILD_DIR)/emu.exe $(BUILD_DIR)/asm.exe
 
-$(BUILD_DIR)/emu.exe: emu.cpp vga.cpp
+$(BUILD_DIR)/emu.exe: emu.cpp vga.cpp spk.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 $(BUILD_DIR)/asm.exe: asm.cpp
@@ -27,7 +28,10 @@ $(BUILD_DIR)/program.bin: $(TEST_SOURCE_BASE) ./$(BUILD_DIR)/asm.exe
 $(BUILD_DIR)/test_vga.bin: $(TEST_SOURCE_VGA) ./$(BUILD_DIR)/asm.exe
 	cat $(TEST_SOURCE_VGA) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/test_vga.bin
 
-test: $(BUILD_DIR)/asm.exe $(BUILD_DIR)/emu.exe $(BUILD_DIR)/test.bin $(BUILD_DIR)/program.bin $(BUILD_DIR)/test_vga.bin
+$(BUILD_DIR)/test_spk.bin: $(TEST_SOURCE_SPK) ./$(BUILD_DIR)/asm.exe
+	cat $(TEST_SOURCE_SPK) | ./$(BUILD_DIR)/asm.exe > $(BUILD_DIR)/test_spk.bin
+
+test: $(BUILD_DIR)/asm.exe $(BUILD_DIR)/emu.exe $(BUILD_DIR)/test.bin $(BUILD_DIR)/program.bin $(BUILD_DIR)/test_vga.bin $(BUILD_DIR)/test_spk.bin
 	./$(BUILD_DIR)/emu.exe $(BUILD_DIR)/test_vga.bin
 
 all: $(BUILD_DIR)/asm.exe $(BUILD_DIR)/emu.exe
