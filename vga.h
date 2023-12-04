@@ -26,4 +26,9 @@ void vga_C15_text_position(uint8_t row, uint8_t col);
 constexpr uint32_t blink_bit = 1<<12;
 void vga_C10_blink(bool enable);
 
+
+// ----------------------------------
+
+void keyboard_B5_send(uint8_t command);
+
 #endif // VGA_H

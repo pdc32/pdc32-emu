@@ -5,6 +5,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <bitset>
+#include <stdio.h>
+
+#include "keyboard/scancodes.cpp"
 
 constexpr uint8_t text_columns = 80;
 constexpr uint8_t text_rows = 30;
@@ -46,7 +49,7 @@ void vga_C15_text_position(uint8_t row, uint8_t col) {
 }
 
 void vga_C10_blink(bool enable) {
-	enable_blink = enable;
+    enable_blink = enable;
 }
 
 SDL_Window* win;
@@ -58,15 +61,15 @@ bool blink_status = false;
 void init_pdc32_palette(uint32_t colors[256]) {
     //std::cerr << "PAL" << std::endl;
     for (int j=0; j<256; j++) {
-	    uint8_t v = j;
-	    // por ahora se toman los bits: BBGGGRRR
-	    // esta distribucion está completamente inventada
-	    // habría que checkear con el autor
-	    uint8_t red = (v & 0x07) << 5;
-	    uint8_t green = ((v >> 3) & 0x07) << 5;
-	    uint8_t blue = ((v >> 6) & 0x03) << 6;
-	    uint8_t alpha = 255;
-	    pallete[j] = red | green<<8 | blue << 16 | alpha << 24;
+        uint8_t v = j;
+        // por ahora se toman los bits: BBGGGRRR
+        // esta distribucion está completamente inventada
+        // habría que checkear con el autor
+        uint8_t red = (v & 0x07) << 5;
+        uint8_t green = ((v >> 3) & 0x07) << 5;
+        uint8_t blue = ((v >> 6) & 0x03) << 6;
+        uint8_t alpha = 255;
+        pallete[j] = red | green<<8 | blue << 16 | alpha << 24;
             //std::cerr << std::bitset<8>(red) << ", " << std::bitset<8>(green) << ", " << std::bitset<8>(blue) << std::endl;
     }
     //std::cerr << "/PAL" << std::endl;
@@ -75,58 +78,91 @@ void init_pdc32_palette(uint32_t colors[256]) {
 void vga_update_framebuffer(uint32_t *framebuffer) {
     int row_start = 0;
     for (int row=0; row < text_rows; row++) {
-	int col_offset = row_start;
-	for (int col=0; col < text_columns; col++) {
-	    uint8_t c = text_vram[row][col].character;
+    int col_offset = row_start;
+    for (int col=0; col < text_columns; col++) {
+        uint8_t c = text_vram[row][col].character;
 
-	    uint8_t fg = text_vram[row][col].fg;
-	    uint8_t bg = text_vram[row][col].bg;
+        uint8_t fg = text_vram[row][col].fg;
+        uint8_t bg = text_vram[row][col].bg;
 
-		if(enable_blink && blink_status) {
-			if(text_vram[row][col].fg & 0x80) {
-				fg = 0;
-			}
-			if(text_vram[row][col].bg & 0x80) {
-				bg = 0;
-			}
-		}
-
-	    int offset = col_offset;
-	    for (int y=0; y < char_height; y++) {
-		int byte = charset_rom[c][y];
-		for (int x=0; x < 8; x++) {
-		    uint8_t color = ((byte >> x) & 1 ) ? fg : bg;
-		    framebuffer[offset + 7-x] = pallete[color];
-
-			if(glitchy_video && col % 2 == 0 && x == 7 && rand()%2000 == 0) {
-				framebuffer[offset + 7-x] = pallete[127];
-			}
-		}
-		offset += text_columns * 8;
-	    }
-	    col_offset += 8;
+        if(enable_blink && blink_status) {
+            if(text_vram[row][col].fg & 0x80) {
+                fg = 0;
+            }
+            if(text_vram[row][col].bg & 0x80) {
+                bg = 0;
+            }
         }
-	row_start += text_columns * 8 * char_height;
+
+        int offset = col_offset;
+        for (int y=0; y < char_height; y++) {
+        int byte = charset_rom[c][y];
+        for (int x=0; x < 8; x++) {
+            uint8_t color = ((byte >> x) & 1 ) ? fg : bg;
+            framebuffer[offset + 7-x] = pallete[color];
+
+            if(glitchy_video && col % 2 == 0 && x == 7 && rand()%2000 == 0) {
+                framebuffer[offset + 7-x] = pallete[127];
+            }
+        }
+        offset += text_columns * 8;
+        }
+        col_offset += 8;
+        }
+    row_start += text_columns * 8 * char_height;
     }
+}
+
+char hexbuf[40];
+
+const char* hexdo(const char* sig_code) {
+    unsigned char *code = (unsigned char*) sig_code;
+    int n = 0;
+    while(code[n] != 0) {
+        sprintf(hexbuf + n*2, "%02x", code[n]);
+        n++;
+    }
+
+    return hexbuf;
+}
+
+void PrintKeyInfo( SDL_KeyboardEvent *key ) {
+    const PS2_scancode& code = ps2_map.at(key->keysym.scancode);
+    if( key->type == SDL_KEYUP )
+        printf( "Release:- %s", hexdo(code.key_break ));
+    else
+        printf( "Press:- %s", hexdo(code.key_make ));
+    printf( "\n" );
 }
 
 int handle_events()
 {
-    SDL_Event e;
-    while (SDL_PollEvent(&e)){
-    	if(e.type == SDL_QUIT) {
-    		return 1;
-    	}
+    SDL_Event event;
+    while (SDL_PollEvent(&event)){
+        switch( event.type ){
+            /* Keyboard event */
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+                PrintKeyInfo( &event.key );
+                break;
+
+            /* SDL_QUIT event (window close) */
+            case SDL_QUIT:
+                return 1;
+
+            default:
+                break;
+        }
     }
-	return 0;
+    return 0;
 }
 
 void load_rom() {
     FILE *fp = fopen("font/pdc32.font", "rb");
-	if(fp == nullptr) {
-		std::cerr << "Cannot open font file" << std::endl;
-		exit(1);
-	}
+    if(fp == nullptr) {
+        std::cerr << "Cannot open font file" << std::endl;
+        exit(1);
+    }
     fread(charset_rom, 1, 4096, fp);
     fclose(fp);
 }
@@ -167,18 +203,18 @@ int display_init() {
 
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (ren == nullptr) {
-		std::cerr << "SDL_CreateRenderer Error" << SDL_GetError() << std::endl;
-		SDL_DestroyWindow(win);
-		SDL_Quit();
+        std::cerr << "SDL_CreateRenderer Error" << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(win);
+        SDL_Quit();
         return EXIT_FAILURE;
     }
 
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
+    tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
     if (tex == nullptr) {
-	    std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
-		SDL_DestroyRenderer(ren);
-		SDL_DestroyWindow(win);
-		SDL_Quit();
+        std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
         return EXIT_FAILURE;
     }
 
@@ -192,7 +228,7 @@ void display_update() {
     static Uint32 last_blink = 0;
     vga_update_framebuffer(framebuffer);
 
-	SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
+    SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderPresent(ren);
 
@@ -201,17 +237,21 @@ void display_update() {
     while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
         SDL_Delay(1);
     }
-	if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
-		blink_status = !blink_status;
-		last_blink = SDL_GetTicks();
-	}
+    if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
+        blink_status = !blink_status;
+        last_blink = SDL_GetTicks();
+    }
 
     last_visit = SDL_GetTicks();
 }
 
 void display_teardown() {
-	SDL_DestroyTexture(tex);
+    SDL_DestroyTexture(tex);
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
+}
+
+void keyboard_B5_send(uint8_t command) {
+    std::cerr << "PDC32 wants to send to keyboard: " <<  std::hex << command << std::endl;
 }

@@ -153,7 +153,8 @@ void handleInstruction(const uint32_t instruction) {
 
         cout << "UART TX: (" << unsigned(uart_data_bits) << " bits) " << (char *) data << endl;
     } else if(type == B5_KBD_TX) {
-        // TODO: implement
+        uint8_t command = bus() & 0xff;
+        keyboard_B5_send(command);
     } else if(type == B6_DATA_ADDR_RTC) {
         // TODO: implement
     } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
@@ -185,9 +186,9 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C4_DRIVE_SERIAL_FUNCTION) {
         // TODO: implement
     } else if(type == C7_VGA_TEXT_COLOR) {
-	uint8_t fg = (bus() >> 16) & 0xff;
-	uint8_t bg = (bus() >> 24) & 0xff;
-	vga_C7_text_color(fg, bg);
+        uint8_t fg = (bus() >> 16) & 0xff;
+        uint8_t bg = (bus() >> 24) & 0xff;
+        vga_C7_text_color(fg, bg);
     } else if(type == C8_VGA_WRITE_VRAM) {
         // TODO: implement
     } else if(type == C9_VGA_FUNCTION) {
@@ -197,16 +198,16 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == C11_VGA_PIXEL_COLOR) {
         // TODO: implement
     } else if(type == C12_VGA_TEXT_WRITE) {
-	uint8_t c = bus() & 0xff;
-	vga_C12_text_write(c);
+        uint8_t c = bus() & 0xff;
+        vga_C12_text_write(c);
     } else if(type == C13_VGA_TEXT_CHAR) {
         // TODO: implement
     } else if(type == C14_VGA_PIXEL_POS) {
         // TODO: implement
     } else if(type == C15_VGA_TEXT_POS) {
-	uint8_t row = (bus() >> 7) & 0x1f;
-	uint8_t col = bus() & 0x7f;
-	vga_C15_text_position(row, col);
+        uint8_t row = (bus() >> 7) & 0x1f;
+        uint8_t col = bus() & 0x7f;
+        vga_C15_text_position(row, col);
     } else {
         cerr << "UNKNOWN INSTRUCTION " << hex << instruction << " at 0x" << programCounter-1 << endl;
         exit(1);
