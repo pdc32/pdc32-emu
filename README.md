@@ -4,11 +4,7 @@ Microinstruction-level emulator for PDC32, a super cool post-apocalyptic compute
 
 ![Photo](docs/photo.jpg)
 
-**Emulator is WIP, unoptimized and doesn't support all instructions**
-
-[Program.bin extracted from here](https://www.youtube.com/watch?v=Wf5YIInCZp8&t=94s)
-
-## WIP block diagram:
+## Block diagram
 ![Diagram](docs/pdc32.drawio.png)
 
 ## Resources to learn about the arch

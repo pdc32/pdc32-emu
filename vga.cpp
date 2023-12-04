@@ -29,6 +29,9 @@ uint8_t text_cursor_col;
 uint8_t text_cursor_row;
 uint8_t text_color_fg;
 uint8_t text_color_bg;
+uint8_t vga_mode = 0;
+uint8_t vga_char = 0;
+
 bool glitchy_video;
 bool enable_blink = false;
 
@@ -37,10 +40,14 @@ void vga_C7_text_color(uint8_t fg, uint8_t bg) {
     text_color_bg = bg;
 }
 
-void vga_C12_text_write(uint8_t c) {
-    text_vram[text_cursor_row][text_cursor_col].character = c;
+void vga_C12_text_write() {
+    text_vram[text_cursor_row][text_cursor_col].character = vga_char;
     text_vram[text_cursor_row][text_cursor_col].fg = text_color_fg;
     text_vram[text_cursor_row][text_cursor_col].bg = text_color_bg;
+}
+
+void vga_C13_set_char(uint8_t character) {
+	vga_char = character;
 }
 
 void vga_C15_text_position(uint8_t row, uint8_t col) {
@@ -170,16 +177,22 @@ void load_rom() {
 void vga_text_test() {
     vga_C15_text_position(15, 40);
     vga_C7_text_color(0b111, 0);
-    vga_C12_text_write('P');
+	vga_C13_set_char('P');
+    vga_C12_text_write();
     vga_C7_text_color(0b111000, 0);
-    vga_C12_text_write('D');
+	vga_C13_set_char('D');
+    vga_C12_text_write();
     vga_C7_text_color(0b11001001, 0);
-    vga_C12_text_write('C');
+	vga_C13_set_char('C');
+    vga_C12_text_write();
     vga_C7_text_color(255, 0);
-    vga_C12_text_write('3');
-    vga_C12_text_write('2');
+	vga_C13_set_char('3');
+    vga_C12_text_write();
+	vga_C13_set_char('2');
+    vga_C12_text_write();
     vga_C7_text_color(0b111111, 0);
-    vga_C12_text_write(255);
+	vga_C13_set_char(255);
+    vga_C12_text_write();
 }
 
 int display_init() {
@@ -195,7 +208,7 @@ int display_init() {
         return EXIT_FAILURE;
     }
 
-    win = SDL_CreateWindow("PDC32 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, SDL_WINDOW_SHOWN);
+    win = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, SDL_WINDOW_SHOWN);
     if (win == nullptr) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
@@ -222,10 +235,22 @@ int display_init() {
     return EXIT_SUCCESS;
 }
 
-void display_update() {
+void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uint32 executed_instructions) {
+	float avg_fps = frames / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+	float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+
+	char title[100];
+	snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
+
+	SDL_SetWindowTitle(window, title);
+}
+
+void display_update(uint32_t *executed_instructions) {
 
     static Uint32 last_visit = 0;
     static Uint32 last_blink = 0;
+    static Uint32 fps_ticks = 0;
+    static Sint32 frames = 0;
     vga_update_framebuffer(framebuffer);
 
     SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
@@ -242,6 +267,16 @@ void display_update() {
         last_blink = SDL_GetTicks();
     }
 
+	frames++;
+	if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
+		update_window_title(win, frames, fps_ticks, *executed_instructions);
+		*executed_instructions = 0;
+
+		// Reset variables for the next second
+		fps_ticks = SDL_GetTicks();
+		frames = 0;
+	}
+
     last_visit = SDL_GetTicks();
 }
 
@@ -250,6 +285,14 @@ void display_teardown() {
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
+}
+
+uint8_t vga_get_mode() {
+	return vga_mode;
+}
+
+void vga_C9_set_mode(uint8_t mode) {
+	vga_mode = mode;
 }
 
 void keyboard_B5_send(uint8_t command) {
