@@ -19,10 +19,11 @@ int handle_events();
 
 // implementation of PDC32 VGA opcodes
 void vga_C7_text_color(uint8_t fg, uint8_t bg);
-void vga_C12_text_write(uint8_t c);
+void vga_C12_text_write();
 void vga_C15_text_position(uint8_t row, uint8_t col);
 void vga_C9_set_mode(uint8_t mode);
 void vga_C10_blink(bool enable);
+void vga_C13_set_char(uint8_t character);
 
 uint8_t vga_get_mode();
 

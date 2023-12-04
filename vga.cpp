@@ -27,6 +27,7 @@ uint8_t text_cursor_row;
 uint8_t text_color_fg;
 uint8_t text_color_bg;
 uint8_t vga_mode = 0;
+uint8_t vga_char = 0;
 
 bool glitchy_video;
 bool enable_blink = false;
@@ -36,10 +37,14 @@ void vga_C7_text_color(uint8_t fg, uint8_t bg) {
     text_color_bg = bg;
 }
 
-void vga_C12_text_write(uint8_t c) {
-    text_vram[text_cursor_row][text_cursor_col].character = c;
+void vga_C12_text_write() {
+    text_vram[text_cursor_row][text_cursor_col].character = vga_char;
     text_vram[text_cursor_row][text_cursor_col].fg = text_color_fg;
     text_vram[text_cursor_row][text_cursor_col].bg = text_color_bg;
+}
+
+void vga_C13_set_char(uint8_t character) {
+	vga_char = character;
 }
 
 void vga_C15_text_position(uint8_t row, uint8_t col) {
@@ -136,16 +141,22 @@ void load_rom() {
 void vga_text_test() {
     vga_C15_text_position(15, 40);
     vga_C7_text_color(0b111, 0);
-    vga_C12_text_write('P');
+	vga_C13_set_char('P');
+    vga_C12_text_write();
     vga_C7_text_color(0b111000, 0);
-    vga_C12_text_write('D');
+	vga_C13_set_char('D');
+    vga_C12_text_write();
     vga_C7_text_color(0b11001001, 0);
-    vga_C12_text_write('C');
+	vga_C13_set_char('C');
+    vga_C12_text_write();
     vga_C7_text_color(255, 0);
-    vga_C12_text_write('3');
-    vga_C12_text_write('2');
+	vga_C13_set_char('3');
+    vga_C12_text_write();
+	vga_C13_set_char('2');
+    vga_C12_text_write();
     vga_C7_text_color(0b111111, 0);
-    vga_C12_text_write(255);
+	vga_C13_set_char(255);
+    vga_C12_text_write();
 }
 
 int display_init() {
