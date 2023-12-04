@@ -10,7 +10,7 @@ using namespace std;
 #include "registers.h"
 #include "vga.h"
 
-constexpr uint32_t programLen = 65536; // 64 KiB
+constexpr uint32_t programLen = 32768; // 32 K * 3 bytes
 constexpr uint32_t cacheLen = 131072; // 128 KiB
 constexpr uint32_t dramLen = 33554432; // 32 MiB
 
@@ -44,6 +44,10 @@ uint8_t uart_data_bits = 8;
 bus_register busRegister = REG_LITERAL;
 
 void jumpTo(uint16_t addr) {
+    if(addr > programLen) {
+        cerr << "At " << programCounter-1 << " trying to jump to invalid address " << addr << endl;
+        exit(1);
+    }
     if(saveReturn) {
         returnAddress = programCounter;
     }
@@ -53,10 +57,15 @@ void jumpTo(uint16_t addr) {
 uint32_t bus() {
     switch (busRegister) {
         case REG_DRIVE_SERIAL:
+            return 0; // TODO: implement
         case REG_RTC:
+            return 0; // TODO: implement
         case REG_UNUSED:
+            return 0;
         case REG_KBD:
+            return 0; // TODO: implement
         case REG_UART:
+            return 0; // TODO: implement
         case REG_DRAM_DATA:
             return dram[dramAddr % dramLen];
         case REG_DRAM_ADDR:
@@ -76,6 +85,7 @@ uint32_t bus() {
         case REG_A_PLUS_B:
             return (carryIn ? 1 : 0) + a + b;
         case REG_STATE:
+            return 0; // TODO: implement
         case REG_LITERAL:
             return dataLiteral;
     }
@@ -103,7 +113,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == A6_INC_DRAM_ADDR) {
         dramAddr++;
     } else if(type == A7_SET_DRAM_ADDR) {
-        dramAddr = bus();
+        dramAddr = bus() % dramLen;
     } else if(type == A8_JNE) {
         if(notEqualThan()) jumpTo(data);
     } else if(type == A9_SET_A) {
@@ -111,7 +121,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == A10_SET_HIGH) {
         dataLiteral = (dataLiteral & 0xFFFF) | data << 16;
     } else if(type == A11_WRITE_DRAM) {
-        dram[dramAddr % dramLen] = dramData;
+        dram[dramAddr] = dramData;
     } else if(type == A12_SET_BUS) {
         busRegister = (bus_register)(data & 15);
     } else if(type == A13_AUTO_RET) {
@@ -119,7 +129,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == A14_SET_B) {
         b = bus();
     } else if(type == A15_SET_ALU) {
-        aluFlags = bus();
+        aluFlags = bus() & 0b111;
     } else if(type == B0_TIMER_SPEAKER_OFV) {
         // TODO: implement
     } else if(type == B1_UART_OFV) {
@@ -157,7 +167,7 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == B6_DATA_ADDR_RTC) {
         // TODO: implement
     } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
-        cout << "OUT PARALLEL " << bus() << endl;
+        // TODO: implement
     } else if(type == B8_JL) {
         if(lessThan()) jumpTo(data);
     } else if(type == B9_TIMER_SPEAKER_FUNCTION) {
@@ -169,11 +179,11 @@ void handleInstruction(const uint32_t instruction) {
     } else if(type == B12_SET_CACHE_DATA) {
         cacheData = bus();
     } else if(type == B13_SET_CACHE_ADDR) {
-        cacheAddr = bus();
+        cacheAddr = bus() % cacheLen;
     } else if(type == B14_ON_OFF_ATX) {
         // TODO: implement
     } else if(type == B15_WRITE_CACHE) {
-        cache[cacheAddr % cacheLen] = cacheData;
+        cache[cacheAddr] = cacheData;
     } else if(type == C0_TIMER) {
         // TODO: implement
     } else if(type == C1_TIME) {
@@ -250,7 +260,7 @@ int main(int argc, char **argv) {
         }
         loadProgram(argv[1]);
     } else {
-        loadProgram("program.bin");
+        loadProgram("firmware/PDC32.firmware");
     }
 
     bool quit = false;
