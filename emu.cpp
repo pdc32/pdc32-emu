@@ -53,8 +53,13 @@ void jump_to(uint16_t addr) {
 }
 
 uint32_t get_state() {
-    return alu_get_state() | (spk_ovf() ? spk_ovf_bit : 0) | (pwr_get_state() << pwr_state_offset) |
-        (vga_get_mode() << vga_mode_offset) | tmr_busy() << tmr_busy_offset | tmr_ovf() << tmr_ovf_offset | (1<<7);
+    return alu_get_state() |
+        (spk_ovf() ? spk_ovf_bit : 0) |
+        (pwr_get_state() << pwr_state_offset) |
+        (vga_get_mode() << vga_mode_offset) |
+        tmr_busy() << tmr_busy_offset |
+        tmr_ovf() << tmr_ovf_offset |
+        keyboard_rx() << keyboard_rx_offset;
 }
 
 uint32_t bus() {
@@ -66,7 +71,7 @@ uint32_t bus() {
         case REG_UNUSED:
             return 0;
         case REG_KBD:
-            return 0; // TODO: implement
+            return keyboard_get_byte();
         case REG_UART:
             return 0; // TODO: implement
         case REG_DRAM_DATA:
@@ -187,7 +192,8 @@ void handleInstruction(const uint32_t instruction) {
         cout << "UART TX: (" << unsigned(uart_data_bits) << " bits) " << (char *) data << endl;
     } else if(type == B5_KBD_TX) {
         if(debug) printf("B5! %x ; KBD_TX\n", bus());
-        // TODO: implement
+        uint8_t command = bus() & 0xff;
+        keyboard_B5_send(command);
     } else if(type == B6_DATA_ADDR_RTC) {
         if(debug) printf("B6! %x ; RTC_ADDR_DATA\n", bus());
         // TODO: implement

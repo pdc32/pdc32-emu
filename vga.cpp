@@ -5,6 +5,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <bitset>
+#include <queue>
+
+#include "vga.h"
+#include "keyboard/scancodes.cpp"
 
 #include "pwr.h"
 
@@ -46,7 +50,7 @@ void vga_C12_text_write() {
 }
 
 void vga_C13_set_char(uint8_t character) {
-	vga_char = character;
+    vga_char = character;
 }
 
 void vga_C15_text_position(uint8_t row, uint8_t col) {
@@ -55,7 +59,7 @@ void vga_C15_text_position(uint8_t row, uint8_t col) {
 }
 
 void vga_C10_blink(bool enable) {
-	enable_blink = enable;
+    enable_blink = enable;
 }
 
 SDL_Window* win;
@@ -69,15 +73,15 @@ bool blink_status = false;
 void init_pdc32_palette(uint32_t colors[256]) {
     //std::cerr << "PAL" << std::endl;
     for (int j=0; j<256; j++) {
-	    uint8_t v = j;
-	    // por ahora se toman los bits: BBGGGRRR
-	    // esta distribucion está completamente inventada
-	    // habría que checkear con el autor
-	    uint8_t red = (v & 0x07) << 5;
-	    uint8_t green = ((v >> 3) & 0x07) << 5;
-	    uint8_t blue = ((v >> 6) & 0x03) << 6;
-	    uint8_t alpha = 255;
-	    pallete[j] = red | green<<8 | blue << 16 | alpha << 24;
+        uint8_t v = j;
+        // por ahora se toman los bits: BBGGGRRR
+        // esta distribucion está completamente inventada
+        // habría que checkear con el autor
+        uint8_t red = (v & 0x07) << 5;
+        uint8_t green = ((v >> 3) & 0x07) << 5;
+        uint8_t blue = ((v >> 6) & 0x03) << 6;
+        uint8_t alpha = 255;
+        pallete[j] = red | green<<8 | blue << 16 | alpha << 24;
             //std::cerr << std::bitset<8>(red) << ", " << std::bitset<8>(green) << ", " << std::bitset<8>(blue) << std::endl;
     }
     //std::cerr << "/PAL" << std::endl;
@@ -86,38 +90,61 @@ void init_pdc32_palette(uint32_t colors[256]) {
 void vga_update_framebuffer(uint32_t *framebuffer) {
     int row_start = 0;
     for (int row=0; row < text_rows; row++) {
-	int col_offset = row_start;
-	for (int col=0; col < text_columns; col++) {
-	    uint8_t c = text_vram[row][col].character;
+    int col_offset = row_start;
+    for (int col=0; col < text_columns; col++) {
+        uint8_t c = text_vram[row][col].character;
 
-	    uint8_t fg = text_vram[row][col].fg;
-	    uint8_t bg = text_vram[row][col].bg;
+        uint8_t fg = text_vram[row][col].fg;
+        uint8_t bg = text_vram[row][col].bg;
 
-		if(enable_blink && blink_status) {
-			if(text_vram[row][col].fg & 0x80) {
-				fg = 0;
-			}
-			if(text_vram[row][col].bg & 0x80) {
-				bg = 0;
-			}
-		}
-
-	    int offset = col_offset;
-	    for (int y=0; y < char_height; y++) {
-		int byte = charset_rom[c][y];
-		for (int x=0; x < 8; x++) {
-		    uint8_t color = ((byte >> x) & 1 ) ? fg : bg;
-		    framebuffer[offset + 7-x] = pallete[color];
-
-			if(glitchy_video && col % 2 == 0 && x == 7 && rand()%2000 == 0) {
-				framebuffer[offset + 7-x] = pallete[127];
-			}
-		}
-		offset += text_columns * 8;
-	    }
-	    col_offset += 8;
+        if(enable_blink && blink_status) {
+            if(text_vram[row][col].fg & 0x80) {
+                fg = 0;
+            }
+            if(text_vram[row][col].bg & 0x80) {
+                bg = 0;
+            }
         }
-	row_start += text_columns * 8 * char_height;
+
+        int offset = col_offset;
+        for (int y=0; y < char_height; y++) {
+        int byte = charset_rom[c][y];
+        for (int x=0; x < 8; x++) {
+            uint8_t color = ((byte >> x) & 1 ) ? fg : bg;
+            framebuffer[offset + 7-x] = pallete[color];
+
+            if(glitchy_video && col % 2 == 0 && x == 7 && rand()%2000 == 0) {
+                framebuffer[offset + 7-x] = pallete[127];
+            }
+        }
+        offset += text_columns * 8;
+        }
+        col_offset += 8;
+        }
+    row_start += text_columns * 8 * char_height;
+    }
+}
+
+const char* format_as_hex_pairs(const char* sig_code) {
+    static char hexbuf[40];
+    unsigned char* code = (unsigned char*) sig_code;
+    int n = 0;
+    while(code[n] != 0) {
+        snprintf(hexbuf + n*2, 3, "%02x", code[n]);
+        n++;
+    }
+
+    return hexbuf;
+}
+
+void PrintKeyInfo( SDL_KeyboardEvent *key ) {
+    const PS2_scancode& code = ps2_map.at(key->keysym.scancode);
+    if( key->type == SDL_KEYUP ) {
+        //std::cerr << "Key release: " << format_as_hex_pairs(code.key_break) << std::endl;
+        keyboard_queue(code.key_break);
+    } else {
+        //std::cerr << "Key press: " << format_as_hex_pairs(code.key_make) << std::endl;
+        keyboard_queue(code.key_make);
     }
 }
 
@@ -130,6 +157,16 @@ int handle_events()
     	if(e.type == SDL_QUIT) {
     		return 1;
     	}
+    	if(e.type == SDL_KEYDOWN) {
+            const PS2_scancode& code = ps2_map.at(e.key.keysym.scancode);
+            //std::cerr << "Key press: " << format_as_hex_pairs(code.key_make) << std::endl;
+            keyboard_queue(code.key_make);
+        }
+    	if(e.type == SDL_KEYUP) {
+            const PS2_scancode& code = ps2_map.at(e.key.keysym.scancode);
+            //std::cerr << "Key release: " << format_as_hex_pairs(code.key_break) << std::endl;
+            keyboard_queue(code.key_break);
+        }
     	if(e.type == SDL_MOUSEBUTTONDOWN) {
     		int mouseX, mouseY;
     		SDL_GetMouseState(&mouseX, &mouseY);
@@ -147,15 +184,23 @@ int handle_events()
     		}
     	}
     }
-	return 0;
+
+    /*
+    int keycode = keyboard_get_byte();
+    if (keycode) {
+        std::cerr << "Byte in keyboard queue: " << std::hex << keycode << std::endl;
+    }
+    */
+    
+    return 0;
 }
 
 void load_rom() {
     FILE *fp = fopen("font/pdc32.font", "rb");
-	if(fp == nullptr) {
-		std::cerr << "Cannot open font file" << std::endl;
-		exit(1);
-	}
+    if(fp == nullptr) {
+        std::cerr << "Cannot open font file" << std::endl;
+        exit(1);
+    }
     fread(charset_rom, 1, 4096, fp);
     fclose(fp);
 }
@@ -163,21 +208,21 @@ void load_rom() {
 void vga_text_test() {
     vga_C15_text_position(15, 40);
     vga_C7_text_color(0b111, 0);
-	vga_C13_set_char('P');
+    vga_C13_set_char('P');
     vga_C12_text_write();
     vga_C7_text_color(0b111000, 0);
-	vga_C13_set_char('D');
+    vga_C13_set_char('D');
     vga_C12_text_write();
     vga_C7_text_color(0b11001001, 0);
-	vga_C13_set_char('C');
+    vga_C13_set_char('C');
     vga_C12_text_write();
     vga_C7_text_color(255, 0);
-	vga_C13_set_char('3');
+    vga_C13_set_char('3');
     vga_C12_text_write();
-	vga_C13_set_char('2');
+    vga_C13_set_char('2');
     vga_C12_text_write();
     vga_C7_text_color(0b111111, 0);
-	vga_C13_set_char(255);
+    vga_C13_set_char(255);
     vga_C12_text_write();
 }
 
@@ -202,18 +247,18 @@ int display_init() {
 
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (ren == nullptr) {
-		std::cerr << "SDL_CreateRenderer Error" << SDL_GetError() << std::endl;
-		SDL_DestroyWindow(win);
-		SDL_Quit();
+        std::cerr << "SDL_CreateRenderer Error" << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(win);
+        SDL_Quit();
         return EXIT_FAILURE;
     }
 
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
+    tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, screen_width, screen_height);
     if (tex == nullptr) {
-	    std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
-		SDL_DestroyRenderer(ren);
-		SDL_DestroyWindow(win);
-		SDL_Quit();
+        std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
         return EXIT_FAILURE;
     }
 
@@ -234,13 +279,13 @@ int display_init() {
 }
 
 void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uint32 executed_instructions) {
-	float avg_fps = frames / ((SDL_GetTicks() - start_ticks) / 1000.0f);
-	float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+    float avg_fps = frames / ((SDL_GetTicks() - start_ticks) / 1000.0f);
+    float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
 
-	char title[100];
-	snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
+    char title[100];
+    snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
 
-	SDL_SetWindowTitle(window, title);
+    SDL_SetWindowTitle(window, title);
 }
 
 void display_update(uint32_t *executed_instructions) {
@@ -251,7 +296,7 @@ void display_update(uint32_t *executed_instructions) {
     static Sint32 frames = 0;
     vga_update_framebuffer(framebuffer);
 
-	SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
+    SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
 	SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
     SDL_RenderPresent(ren);
@@ -261,36 +306,87 @@ void display_update(uint32_t *executed_instructions) {
     while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
         SDL_Delay(1);
     }
-	if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
-		blink_status = !blink_status;
-		last_blink = SDL_GetTicks();
-	}
+    if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
+        blink_status = !blink_status;
+        last_blink = SDL_GetTicks();
+    }
 
-	frames++;
-	if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
-		update_window_title(win, frames, fps_ticks, *executed_instructions);
-		*executed_instructions = 0;
+    frames++;
+    if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
+        update_window_title(win, frames, fps_ticks, *executed_instructions);
+        *executed_instructions = 0;
 
-		// Reset variables for the next second
-		fps_ticks = SDL_GetTicks();
-		frames = 0;
-	}
+        // Reset variables for the next second
+        fps_ticks = SDL_GetTicks();
+        frames = 0;
+    }
 
     last_visit = SDL_GetTicks();
 }
 
 void display_teardown() {
-	SDL_DestroyTexture(power_button_tex);
-	SDL_DestroyTexture(tex);
+    SDL_DestroyTexture(power_button_tex);
+    SDL_DestroyTexture(tex);
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
 }
 
 uint8_t vga_get_mode() {
-	return vga_mode;
+    return vga_mode;
 }
 
 void vga_C9_set_mode(uint8_t mode) {
-	vga_mode = mode;
+    vga_mode = mode;
+}
+
+std::queue<uint8_t> keycodes_queue;
+void keyboard_queue(const char* codes) {
+    uint8_t* bytes = (uint8_t*) codes;
+    uint8_t b = *bytes++;
+    while(b != 0) {
+        keycodes_queue.push(b);
+        b = *bytes++;
+    }
+}
+
+uint8_t keyboard_get_byte() {
+    if (keycodes_queue.empty()) {
+        return 0;
+    } else {
+        uint8_t b = keycodes_queue.front();
+        std::cerr << "Byte in bus from keyboard: " << std::hex << (int)b << std::endl;
+        keycodes_queue.pop();
+        return b;
+    }
+}
+
+bool keyboard_rx() {
+    return keycodes_queue.empty() == false;
+}
+
+void keyboard_reset() {
+    while(!keycodes_queue.empty()) {
+        keycodes_queue.pop();
+    }
+}
+
+void keyboard_send_ack() {
+    keycodes_queue.push(0xFA); // ack
+}
+
+void keyboard_B5_send(uint8_t code) {
+    switch(code) {
+        case 0xFF: // reset
+            keyboard_reset();
+            keyboard_send_ack();
+            break;
+        case 0xED: // set LEDs
+            keyboard_send_ack();
+            break;
+        default:
+            std::cerr << "PDC32 wants to send to keyboard: " <<  std::hex << (int)code << std::endl;
+            keyboard_send_ack();
+            break;
+    }
 }

@@ -31,4 +31,15 @@ constexpr uint32_t vga_blink_bit = 1<<12;
 constexpr uint32_t vga_C9_mode_bits = 3;
 constexpr uint32_t vga_mode_offset = 12;
 
+
+// ----------------------------------
+
+void keyboard_B5_send(uint8_t command);
+void keyboard_queue(const char* codes);
+uint8_t keyboard_get_byte();
+bool keyboard_rx();
+
+constexpr uint32_t keyboard_rx_offset = 7;
+constexpr uint32_t keyboard_tx_offset = 8;
+
 #endif // VGA_H
