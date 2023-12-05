@@ -292,11 +292,9 @@ void display_update(uint32_t *executed_instructions) {
 
     // Un toque de delay, para que no ejecute mas de 60fps,
     // y poder simular la velocidad real de la PDC32
-    /*
     while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
         SDL_Delay(1);
     }
-    */
     if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
         blink_status = !blink_status;
         last_blink = SDL_GetTicks();
