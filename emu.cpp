@@ -12,6 +12,7 @@ using namespace std;
 #include "spk.h"
 #include "alu.h"
 #include "tmr.h"
+#include "pwr.h"
 
 constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
 constexpr uint32_t cache_len = 32768; // 128 KiB
@@ -35,9 +36,6 @@ uint16_t program_counter = 0;
 uint16_t return_address = 0;
 bool save_return = false;
 
-constexpr uint32_t power_on_bit = 1<<11;
-bool power_on = false;
-
 uint8_t uart_data_bits = 8;
 
 bus_register bus_selector = REG_LITERAL;
@@ -57,7 +55,7 @@ void jump_to(uint16_t addr) {
 uint32_t get_state() {
     return alu_get_state() |
         (spk_ovf() ? spk_ovf_bit : 0) |
-        power_on_bit |
+        (pwr_get_state() << pwr_state_offset) |
         (vga_get_mode() << vga_mode_offset) |
         tmr_busy() << tmr_busy_offset |
         tmr_ovf() << tmr_ovf_offset |
@@ -224,8 +222,7 @@ void handleInstruction(const uint32_t instruction) {
         cache_addr = bus() % cache_len;
     } else if(type == B14_ON_OFF_ATX) {
         if(debug) printf("B14 %x ; PWR = %x\n", bus(), bus());
-        power_on = bus() & (1<<11);
-        cout << "Power status changed: " << power_on << endl;
+        pwr_B14_set_power_on(bus() & pwr_bit);
     } else if(type == B15_WRITE_CACHE) {
         if(debug) printf("B15 ; CACHE_WRITE\n");
         cache[cache_addr] = cache_data;

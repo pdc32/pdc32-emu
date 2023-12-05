@@ -10,6 +10,8 @@
 #include "vga.h"
 #include "keyboard/scancodes.cpp"
 
+#include "pwr.h"
+
 constexpr uint8_t text_columns = 80;
 constexpr uint8_t text_rows = 30;
 constexpr uint8_t char_height = 16;
@@ -63,6 +65,8 @@ void vga_C10_blink(bool enable) {
 SDL_Window* win;
 SDL_Renderer* ren;
 SDL_Texture* tex;
+SDL_Texture* power_button_tex;
+SDL_Rect power_button_rect = {screen_width-16,0,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
 
@@ -144,24 +148,41 @@ void PrintKeyInfo( SDL_KeyboardEvent *key ) {
     }
 }
 
+bool power_button_pressed = false;
+
 int handle_events()
 {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)){
-        switch( event.type ){
-            /* Keyboard event */
-            case SDL_KEYDOWN:
-            case SDL_KEYUP:
-                PrintKeyInfo( &event.key );
-                break;
-
-            /* SDL_QUIT event (window close) */
-            case SDL_QUIT:
-                return 1;
-
-            default:
-                break;
+    SDL_Event e;
+    while (SDL_PollEvent(&e)){
+    	if(e.type == SDL_QUIT) {
+    		return 1;
+    	}
+    	if(e.type == SDL_KEYDOWN) {
+            const PS2_scancode& code = ps2_map.at(e.key.keysym.scancode);
+            //std::cerr << "Key press: " << format_as_hex_pairs(code.key_make) << std::endl;
+            keyboard_queue(code.key_make);
         }
+    	if(e.type == SDL_KEYUP) {
+            const PS2_scancode& code = ps2_map.at(e.key.keysym.scancode);
+            //std::cerr << "Key release: " << format_as_hex_pairs(code.key_break) << std::endl;
+            keyboard_queue(code.key_break);
+        }
+    	if(e.type == SDL_MOUSEBUTTONDOWN) {
+    		int mouseX, mouseY;
+    		SDL_GetMouseState(&mouseX, &mouseY);
+
+    		if (mouseX >= power_button_rect.x && mouseX <= power_button_rect.x + power_button_rect.w &&
+				mouseY >= power_button_rect.y && mouseY <= power_button_rect.y + power_button_rect.h) {
+    			power_button_pressed = true;
+    			pwr_button_press(true);
+			}
+    	}
+    	if(e.type == SDL_MOUSEBUTTONUP) {
+    		if(power_button_pressed) {
+    			power_button_pressed = false;
+    			pwr_button_press(false);
+    		}
+    	}
     }
 
     /*
@@ -241,6 +262,18 @@ int display_init() {
         return EXIT_FAILURE;
     }
 
+	SDL_Surface *power_button = SDL_LoadBMP("res/power.bmp");
+	if (power_button == nullptr) {
+		std::cerr << "SDL_LoadBMP (res/power.bmp) Error: " << SDL_GetError() << std::endl;
+		SDL_DestroyTexture(tex);
+		SDL_DestroyRenderer(ren);
+		SDL_DestroyWindow(win);
+		SDL_Quit();
+		return EXIT_FAILURE;
+	}
+	power_button_tex = SDL_CreateTextureFromSurface(ren, power_button);
+	SDL_FreeSurface(power_button);
+
     init_pdc32_palette(pallete);
     return EXIT_SUCCESS;
 }
@@ -265,6 +298,7 @@ void display_update(uint32_t *executed_instructions) {
 
     SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
+	SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
     SDL_RenderPresent(ren);
 
     // Un toque de delay, para que no ejecute mas de 60fps,
@@ -291,6 +325,7 @@ void display_update(uint32_t *executed_instructions) {
 }
 
 void display_teardown() {
+    SDL_DestroyTexture(power_button_tex);
     SDL_DestroyTexture(tex);
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);

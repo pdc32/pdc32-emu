@@ -37,7 +37,7 @@ void spk_b0_timer_ovf(uint32_t bus){
     bus &= 0xFFFFFF;
 
     float freq = 8e6 / bus;
-    cout << "SPK freq set to " << freq << endl;
+    cout << "SPK frequency: " << freq << " Hz" << endl;
     frequency = freq;
     spk_overflow = bus;
 }
