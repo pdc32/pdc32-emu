@@ -71,7 +71,7 @@ uint32_t bus() {
         case REG_UNUSED:
             return 0;
         case REG_KBD:
-            return keyboard_get_byte();
+            return keyboard_get_data();
         case REG_UART:
             return 0; // TODO: implement
         case REG_DRAM_DATA:
