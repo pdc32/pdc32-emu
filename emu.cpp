@@ -55,7 +55,13 @@ void jump_to(uint16_t addr) {
 }
 
 uint32_t get_state() {
-    return alu_get_state() | (spk_ovf() ? spk_ovf_bit : 0) | power_on_bit | (vga_get_mode() << vga_mode_offset) | tmr_busy() << tmr_busy_offset | tmr_ovf() << tmr_ovf_offset;
+    return alu_get_state() |
+        (spk_ovf() ? spk_ovf_bit : 0) |
+        power_on_bit |
+        (vga_get_mode() << vga_mode_offset) |
+        tmr_busy() << tmr_busy_offset |
+        tmr_ovf() << tmr_ovf_offset |
+        keyboard_rx() << keyboard_rx_offset;
 }
 
 uint32_t bus() {
@@ -67,7 +73,7 @@ uint32_t bus() {
         case REG_UNUSED:
             return 0;
         case REG_KBD:
-            return 0; // TODO: implement
+            return keyboard_get_byte();
         case REG_UART:
             return 0; // TODO: implement
         case REG_DRAM_DATA:

@@ -121,9 +121,8 @@ void vga_update_framebuffer(uint32_t *framebuffer) {
     }
 }
 
-char hexbuf[40];
-
-const char* hexdo(const char* sig_code) {
+const char* format_as_hex_pairs(const char* sig_code) {
+    static char hexbuf[40];
     unsigned char* code = (unsigned char*) sig_code;
     int n = 0;
     while(code[n] != 0) {
@@ -137,10 +136,10 @@ const char* hexdo(const char* sig_code) {
 void PrintKeyInfo( SDL_KeyboardEvent *key ) {
     const PS2_scancode& code = ps2_map.at(key->keysym.scancode);
     if( key->type == SDL_KEYUP ) {
-        //std::cerr << "Key release: " << hexdo(code.key_break) << std::endl;
+        //std::cerr << "Key release: " << format_as_hex_pairs(code.key_break) << std::endl;
         keyboard_queue(code.key_break);
     } else {
-        //std::cerr << "Key press: " << hexdo(code.key_make) << std::endl;
+        //std::cerr << "Key press: " << format_as_hex_pairs(code.key_make) << std::endl;
         keyboard_queue(code.key_make);
     }
 }
@@ -165,10 +164,12 @@ int handle_events()
         }
     }
 
+    /*
     int keycode = keyboard_get_byte();
     if (keycode) {
         std::cerr << "Byte in keyboard queue: " << std::hex << keycode << std::endl;
     }
+    */
     
     return 0;
 }
@@ -319,11 +320,38 @@ uint8_t keyboard_get_byte() {
         return 0;
     } else {
         uint8_t b = keycodes_queue.front();
+        std::cerr << "Byte in bus from keyboard: " << std::hex << (int)b << std::endl;
         keycodes_queue.pop();
         return b;
     }
 }
 
-void keyboard_B5_send(uint8_t command) {
-    std::cerr << "PDC32 wants to send to keyboard: " <<  std::hex << command << std::endl;
+bool keyboard_rx() {
+    return keycodes_queue.empty() == false;
+}
+
+void keyboard_reset() {
+    while(!keycodes_queue.empty()) {
+        keycodes_queue.pop();
+    }
+}
+
+void keyboard_send_ack() {
+    keycodes_queue.push(0xFA); // ack
+}
+
+void keyboard_B5_send(uint8_t code) {
+    switch(code) {
+        case 0xFF: // reset
+            keyboard_reset();
+            keyboard_send_ack();
+            break;
+        case 0xED: // set LEDs
+            keyboard_send_ack();
+            break;
+        default:
+            std::cerr << "PDC32 wants to send to keyboard: " <<  std::hex << (int)code << std::endl;
+            keyboard_send_ack();
+            break;
+    }
 }
