@@ -13,6 +13,8 @@ using namespace std;
 #include "alu.h"
 #include "tmr.h"
 #include "pwr.h"
+#include "uart.h"
+#include "eep.h"
 
 constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
 constexpr uint32_t cache_len = 32768; // 128 KiB
@@ -36,8 +38,6 @@ uint16_t program_counter = 0;
 uint16_t return_address = 0;
 bool save_return = false;
 
-uint8_t uart_data_bits = 8;
-
 bus_register bus_selector = REG_LITERAL;
 bool debug = false;
 
@@ -56,16 +56,17 @@ uint32_t get_state() {
     return alu_get_state() |
         (spk_ovf() ? spk_ovf_bit : 0) |
         (pwr_get_state() << pwr_state_offset) |
+        (uart_state() << uart_state_offset)
         (vga_get_mode() << vga_mode_offset) |
-        tmr_busy() << tmr_busy_offset |
-        tmr_ovf() << tmr_ovf_offset |
-        keyboard_rx() << keyboard_rx_offset;
+        keyboard_rx() << keyboard_rx_offset |
+        tmr_busy() << tmr_busy_offset | 
+        tmr_ovf() << tmr_ovf_offset;
 }
 
 uint32_t bus() {
     switch (bus_selector) {
         case REG_DRIVE_SERIAL:
-            return 0; // TODO: implement
+            return eep_read();
         case REG_RTC:
             return 0; // TODO: implement
         case REG_UNUSED:
@@ -73,7 +74,7 @@ uint32_t bus() {
         case REG_KBD:
             return keyboard_get_data();
         case REG_UART:
-            return 0; // TODO: implement
+            return uart_read();
         case REG_DRAM_DATA:
             return dram[dram_addr % dram_len];
         case REG_DRAM_ADDR:
@@ -159,37 +160,13 @@ void handleInstruction(const uint32_t instruction) {
         spk_b0_timer_ovf(bus());
     } else if(type == B1_UART_OFV) {
         if(debug) printf("B1 %x ; UART_OVF = %x\n", bus(), bus());
-        auto speed = 24000000 / bus();
-        cout << "UART OFV: speed=" << speed << " bps (* might need more math)" << endl;
+        uart_b1_set_ovf(bus());
     } else if(type == B2_UART_CONFIG) {
         if(debug) printf("B2 %x ; UART_CFG = %x\n", bus(), bus());
-        auto word = bus();
-        bool parity_odd = (word >> 16) & 0b1;
-        uint8_t databits = 6 + ((word >> 17) & 0b11);
-        bool parity_enabled = (word >> 19) & 0b1;
-        uint8_t stopbits = 1 + (word >> 20);
-
-        uart_data_bits = databits;
-
-        cout << "UART CONFIG:"
-            << " databits=" << unsigned(databits)
-            << " parity=" << (parity_enabled ? (parity_odd ? "ODD" : "EVEN") : "OFF")
-            << " stopbits=" << unsigned(stopbits)
-            << endl;
+        uart_b2_config(bus());
     } else if(type == B3_UART_TX) {
         if(debug) printf("B3 %x ; UART_TX = %x\n", bus(), bus());
-        uint16_t mask = (1 << (uart_data_bits + 1)) - 1; // lower bits
-        uint16_t word = bus() & mask;
-        char data[5]; // in case uart_data_bits gets corrupted to something invalid, the bus might be 4 hexa chars + NUL
-                      //
-        if (uart_data_bits <= 8) {
-            data[0] = (char) bus() & 0xFF;
-            data[1] = '\0';
-        } else {
-            snprintf(data, 4, "%x", word);
-        }
-
-        cout << "UART TX: (" << unsigned(uart_data_bits) << " bits) " << (char *) data << endl;
+        uart_b3_tx(bus());
     } else if(type == B5_KBD_TX) {
         if(debug) printf("B5! %x ; KBD_TX\n", bus());
         uint8_t command = bus() & 0xff;
@@ -332,6 +309,7 @@ int main(int argc, char **argv) {
 
     display_init();
     spk_init();
+    eep_init();
     uint32_t executed_instructions = 0;
     while(!quit) {
         if(handle_events()) quit = true;
@@ -348,6 +326,7 @@ int main(int argc, char **argv) {
         }
         display_update(&executed_instructions);
     }
+    eep_teardown();
     display_teardown();
     if(debug) {
         dump_memory();
