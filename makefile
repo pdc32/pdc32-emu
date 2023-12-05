@@ -29,6 +29,9 @@ test: $(EMU) $(TEST_BIN)
 boot: $(EMU)
 	$(EMU) firmware/PDC32-skipmemcheck.firmware
 
+memcheck: $(EMU)
+	$(EMU) firmware/PDC32.firmware
+
 testall: 
 	make test TESTNAME=base
 	make test TESTNAME=jump_call
