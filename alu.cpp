@@ -11,9 +11,9 @@ uint8_t alu_get_state(){
     uint32_t alu = alu_greater_than() ? alu_greater_than_bit : 0 |
                 alu_equal_than() ? alu_equals_bit : 0 |
                 alu_less_than() ? alu_less_than_bit : 0;
-    bool carryOut = (uint64_t) a + (uint64_t) b > 0xFFFFFFFF;
-    uint32_t carryOutBit = carryOut ? 8 : 0;
-    return alu | carryOutBit;
+    bool carry_out = (uint64_t)(carry_in ? 1 : 0) + (uint64_t) a + (uint64_t) b > 0xFFFFFFFF;
+    uint32_t carry_out_bit = carry_out ? alu_carry_out_bit : 0;
+    return alu | carry_out_bit;
 }
 
 void alu_set_flags(uint8_t flags){

@@ -21,6 +21,7 @@ constexpr uint32_t alu_greater_than_bit = 1;
 constexpr uint32_t alu_equals_bit = 2;
 constexpr uint32_t alu_less_than_bit = 4;
 constexpr uint32_t alu_carry_in_bit = 8;
+constexpr uint32_t alu_carry_out_bit = 8;
 constexpr uint32_t alu_flags_bits = alu_greater_than_bit | alu_equals_bit | alu_less_than_bit;
 
 #endif

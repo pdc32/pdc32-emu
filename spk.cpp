@@ -52,6 +52,15 @@ void spk_process(){
     spk_value -= 8;
     if(spk_value < 0){
         spk_value = spk_overflow;
+
+        // Realistic logic that somehow isn't working
+        /*if(spk_on) {
+            if(spk_mute) {
+                if(!spk_state) spk_state = false;
+            } else {
+                spk_state = !spk_state;
+            }
+        }*/
         if(spk_on) spk_state = !spk_state;
     }
 }

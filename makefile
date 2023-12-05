@@ -14,7 +14,7 @@ TEST_BIN := $(BUILD_DIR)/$(TESTNAME)_test.bin
 
 all: $(EMU) $(ASM)
 
-$(EMU): emu.cpp vga.cpp spk.cpp alu.cpp tmr.cpp pwr.cpp
+$(EMU): emu.cpp vga.cpp spk.cpp alu.cpp tmr.cpp pwr.cpp uart.cpp eep.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 $(ASM): asm.cpp
