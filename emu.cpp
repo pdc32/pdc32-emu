@@ -56,7 +56,7 @@ uint32_t get_state() {
     return alu_get_state() |
         (spk_ovf() ? spk_ovf_bit : 0) |
         (pwr_get_state() << pwr_state_offset) |
-        (uart_state() << uart_state_offset)
+        (uart_state() << uart_state_offset) |
         (vga_get_mode() << vga_mode_offset) |
         keyboard_rx() << keyboard_rx_offset |
         tmr_busy() << tmr_busy_offset | 
