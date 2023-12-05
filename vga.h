@@ -36,7 +36,7 @@ constexpr uint32_t vga_mode_offset = 12;
 
 void keyboard_B5_send(uint8_t command);
 void keyboard_queue(const char* codes);
-uint8_t keyboard_get_byte();
+uint32_t keyboard_get_data();
 bool keyboard_rx();
 
 constexpr uint32_t keyboard_rx_offset = 7;

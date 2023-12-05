@@ -137,17 +137,6 @@ const char* format_as_hex_pairs(const char* sig_code) {
     return hexbuf;
 }
 
-void PrintKeyInfo( SDL_KeyboardEvent *key ) {
-    const PS2_scancode& code = ps2_map.at(key->keysym.scancode);
-    if( key->type == SDL_KEYUP ) {
-        //std::cerr << "Key release: " << format_as_hex_pairs(code.key_break) << std::endl;
-        keyboard_queue(code.key_break);
-    } else {
-        //std::cerr << "Key press: " << format_as_hex_pairs(code.key_make) << std::endl;
-        keyboard_queue(code.key_make);
-    }
-}
-
 bool power_button_pressed = false;
 
 int handle_events()
@@ -303,9 +292,11 @@ void display_update(uint32_t *executed_instructions) {
 
     // Un toque de delay, para que no ejecute mas de 60fps,
     // y poder simular la velocidad real de la PDC32
+    /*
     while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
         SDL_Delay(1);
     }
+    */
     if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
         blink_status = !blink_status;
         last_blink = SDL_GetTicks();
@@ -340,24 +331,35 @@ void vga_C9_set_mode(uint8_t mode) {
     vga_mode = mode;
 }
 
-std::queue<uint8_t> keycodes_queue;
+std::queue<uint32_t> keycodes_queue;
 void keyboard_queue(const char* codes) {
     uint8_t* bytes = (uint8_t*) codes;
     uint8_t b = *bytes++;
     while(b != 0) {
-        keycodes_queue.push(b);
+        uint32_t data = b;
         b = *bytes++;
+
+        if (b != 0) {
+            data = data << 8 | b;
+            b = *bytes++;
+        }
+
+        if (b != 0) {
+            data = data << 8 | b;
+            b = *bytes++;
+        }
+        keycodes_queue.push(data);
     }
 }
 
-uint8_t keyboard_get_byte() {
+uint32_t keyboard_get_data() {
     if (keycodes_queue.empty()) {
         return 0;
     } else {
-        uint8_t b = keycodes_queue.front();
-        std::cerr << "Byte in bus from keyboard: " << std::hex << (int)b << std::endl;
+        uint32_t data = keycodes_queue.front();
         keycodes_queue.pop();
-        return b;
+        std::cerr << "Data in bus from keyboard: " << std::hex << data << std::endl;
+        return data;
     }
 }
 
