@@ -1,2 +1,7 @@
-*.exe
 *.bin
+*.exe
+
+*.data
+*.html
+*.js
+*.wasm
