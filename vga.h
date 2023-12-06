@@ -1,6 +1,13 @@
 #ifndef VGA_H
 #define VGA_H
 
+// 4Mhz (baseclock) / 4 (clocks per instruction)
+constexpr uint32_t instructions_per_second = 4000000 / 4;
+// display updates: 15 fps
+constexpr uint32_t instructions_per_display_update = instructions_per_second / 60;
+// keyboard updates: 240 hz
+constexpr uint32_t instructions_per_event_checking = instructions_per_second / 240;
+
 // SDL input/output functions
 
 // initialize SDL, open window, setup palette, etc

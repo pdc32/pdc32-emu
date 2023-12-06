@@ -282,6 +282,8 @@ void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uin
     SDL_SetWindowTitle(window, title);
 }
 
+constexpr uint32_t ms_per_frame = 1000 / instructions_per_display_update;
+
 void display_update(uint32_t *executed_instructions) {
 
     static Uint32 last_visit = 0;
@@ -297,7 +299,7 @@ void display_update(uint32_t *executed_instructions) {
 
     // Un toque de delay, para que no ejecute mas de 60fps,
     // y poder simular la velocidad real de la PDC32
-    while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + 16)) {
+    while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_visit + ms_per_frame)) {
         SDL_Delay(1);
     }
     if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {

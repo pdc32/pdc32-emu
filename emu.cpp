@@ -20,8 +20,6 @@ constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
 constexpr uint32_t cache_len = 32768; // 128 KiB
 constexpr uint32_t dram_len = 8388608; // 32 MiB
 
-// 4Mhz (baseclock) / 4 (clocks per instruction) / 60hz (display fps)
-constexpr uint32_t instructions_per_display_update = 16666;
 
 uint32_t data_literal = 0; // Data from instructions
 
@@ -311,20 +309,27 @@ int main(int argc, char **argv) {
     spk_init();
     eep_init();
     uint32_t executed_instructions = 0;
+    uint64_t tick_count = 0;
     while(!quit) {
-        if(handle_events()) quit = true;
-
-        for(uint32_t i=0; i<instructions_per_display_update; i++) {
-            if(debug) {
-                printf("%x: ", program_counter);
-            }
-            const uint32_t instruction = program[program_counter++];
-            handleInstruction(instruction);
-            spk_process();
-            executed_instructions++;
-            tmr_process();
+        if(tick_count % instructions_per_event_checking == 0) {
+            quit = handle_events();
         }
-        display_update(&executed_instructions);
+
+        if(tick_count % instructions_per_display_update == 0) {
+            display_update(&executed_instructions);
+            executed_instructions = 0;
+        }
+
+        if(debug) {
+            printf("%x: ", program_counter);
+        }
+        const uint32_t instruction = program[program_counter++];
+        handleInstruction(instruction);
+        spk_process();
+        executed_instructions++;
+        tmr_process();
+
+        tick_count++;
     }
     eep_teardown();
     display_teardown();
