@@ -1,14 +1,15 @@
 # test name for `make test` (overridable by `make test TESTNAME=spk`)
 TESTNAME := vga
 
-CXX := g++
 CXXFLAGS := -std=c++11 -Wall -O2
 SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
 BUILD_DIR := build
 
-EMU := $(BUILD_DIR)/emu.exe
-ASM := $(BUILD_DIR)/asm.exe
+BIN_EXT := .exe
+
+EMU := $(BUILD_DIR)/emu$(BIN_EXT)
+ASM := $(BUILD_DIR)/asm$(BIN_EXT)
 
 TEST_BIN := $(BUILD_DIR)/$(TESTNAME)_test.bin
 
@@ -41,6 +42,12 @@ testall:
 
 compile_flags.txt: makefile
 	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
+
+emscripten:
+	EM_CACHE=$(PWD)/.emscripten_cache/ emmake make BIN_EXT=".html" CXXFLAGS="-sUSE_SDL=2 -sTOTAL_MEMORY=67108864 --preload-file firmware/ --preload-file font/ --preload-file res/"
+
+server:
+	cd build/; python3 -m http.server
 
 clean:
 	rm -rf $(BUILD_DIR)/*

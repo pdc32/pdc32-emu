@@ -1,2 +1,4 @@
+.emscripten_cache/
 .idea/
+
 compile_flags.txt
