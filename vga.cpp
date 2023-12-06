@@ -228,7 +228,12 @@ int display_init() {
 
     load_rom();
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    auto sdl_init_flags = SDL_INIT_EVERYTHING;
+#ifdef __EMSCRIPTEN__
+    sdl_init_flags &= ~SDL_INIT_HAPTIC;
+#endif
+
+    if (SDL_Init(sdl_init_flags) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
     }

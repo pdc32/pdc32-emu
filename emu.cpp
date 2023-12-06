@@ -4,6 +4,11 @@
 #include <sstream>
 #include <iomanip>
 #include <cstring>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 using namespace std;
 
 #include "instructions.h"
@@ -285,6 +290,41 @@ void dump_memory() {
     fclose(cache_fp);
 }
 
+uint64_t tick_count = 0;
+
+void one_frame(bool *quit) {
+    uint32_t executed_instructions = 0;
+
+    for(uint32_t i=0; i<instructions_per_display_update; i++) {
+        if(tick_count % instructions_per_event_checking == 0) {
+            if(handle_events()) {
+               *quit = true;
+            }
+        }
+        if(debug) {
+            printf("%x: ", program_counter);
+        }
+        const uint32_t instruction = program[program_counter++];
+        handleInstruction(instruction);
+        spk_process();
+        executed_instructions++;
+        tmr_process();
+        tick_count++;
+    }
+
+    display_update(&executed_instructions);
+}
+
+#ifdef __EMSCRIPTEN__
+static void em_mainloop() {
+    static bool quit;
+    if (quit) {
+        emscripten_cancel_main_loop();
+    }
+    one_frame(&quit);
+}
+#endif
+
 int main(int argc, char **argv) {
     if (argc >= 2) {
         bool help = false;
@@ -303,33 +343,15 @@ int main(int argc, char **argv) {
         loadProgram("firmware/PDC32.firmware");
     }
 
-    bool quit = false;
-
     display_init();
     spk_init();
     eep_init();
-    uint32_t executed_instructions = 0;
-    uint64_t tick_count = 0;
+    #ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(em_mainloop, 0, 1);
+    #else
+    bool quit = false;
     while(!quit) {
-        if(tick_count % instructions_per_event_checking == 0) {
-            quit = handle_events();
-        }
-
-        if(tick_count % instructions_per_display_update == 0) {
-            display_update(&executed_instructions);
-            executed_instructions = 0;
-        }
-
-        if(debug) {
-            printf("%x: ", program_counter);
-        }
-        const uint32_t instruction = program[program_counter++];
-        handleInstruction(instruction);
-        spk_process();
-        executed_instructions++;
-        tmr_process();
-
-        tick_count++;
+        one_frame(&quit);
     }
     eep_teardown();
     display_teardown();
@@ -337,4 +359,5 @@ int main(int argc, char **argv) {
         dump_memory();
     }
     return 0;
+    #endif
 }
