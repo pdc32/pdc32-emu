@@ -20,20 +20,20 @@ void tmr_C1_set_time(uint32_t time){
 }
 void tmr_process(){
     for(int i=0;i<8;i++){
-        if(timers[i] != 0xFFFFFF)
+        if(timers[i] < 0xFFFFFF)
             timers[i] ++;
     }
 }
 uint8_t tmr_busy(){
-    bool busy = false;
+    // Realistic logic that somehow isn't working
+    /*bool busy = false;
     for(int i=0;i<8;i++){
-        if(selected_timers & (1<<i)) {
-            if(timers[i] != 0xFFFFFF) {
-                busy = true;
-            }
+        if(timers[i] == 0xFFFFFF) {
+            busy = true;
         }
     }
-    return busy;
+    return busy;*/
+    return false;
 }
 uint8_t tmr_ovf(){
     uint8_t ovf = 0;
