@@ -13,7 +13,7 @@ ASM := $(BUILD_DIR)/asm$(BIN_EXT)
 
 TEST_BIN := $(BUILD_DIR)/$(TESTNAME)_test.bin
 
-all: $(EMU) $(ASM)
+all: $(EMU)
 
 $(EMU): emu.cpp vga.cpp spk.cpp alu.cpp tmr.cpp pwr.cpp uart.cpp eep.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
@@ -43,11 +43,13 @@ testall:
 compile_flags.txt: makefile
 	echo '$(CXXFLAGS)' | tr ' ' '\n' > $@
 
-emscripten:
-	EM_CACHE=$(PWD)/.emscripten_cache/ emmake make BIN_EXT=".html" CXXFLAGS="-sUSE_SDL=2 -sTOTAL_MEMORY=67108864 --preload-file firmware/ --preload-file font/ --preload-file res/"
+.PHONY: web
+web:
+	EM_CACHE=$(PWD)/.emscripten_cache/ emmake make BIN_EXT=".js" CXXFLAGS="-sUSE_SDL=2 -sTOTAL_MEMORY=67108864 --preload-file firmware/ --preload-file font/ --preload-file res/"
+	mv build/*.js build/*.wasm build/*.data web/
 
 server:
-	cd build/; python3 -m http.server
+	cd web/; python3 -m http.server
 
 clean:
 	rm -rf $(BUILD_DIR)/*
