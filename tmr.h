@@ -11,5 +11,6 @@ uint8_t tmr_ovf();
 
 constexpr uint32_t tmr_busy_offset = 15;
 constexpr uint32_t tmr_ovf_offset = 24;
+constexpr uint32_t instructions_per_timer_update = 250;
 
 #endif

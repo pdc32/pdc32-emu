@@ -315,7 +315,7 @@ void one_frame(bool *quit) {
             handleInstruction(instruction);
             if(!pwr_is_on()) break;
             spk_process();
-            tmr_process();
+            if(tick_count % instructions_per_timer_update == 0) tmr_process();
             eep_process();
             tick_count++;
         }
