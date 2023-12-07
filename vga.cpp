@@ -44,6 +44,12 @@ void vga_C7_text_color(uint8_t fg, uint8_t bg) {
 }
 
 void vga_C12_text_write() {
+    if (text_cursor_row >= text_rows || text_cursor_col >= text_columns) {
+        std::cerr << "Skipping out of bounds character <" << (int)vga_char
+            << ">, row: " << (int)text_cursor_row
+            << ", col: " << (int)text_cursor_col << std::endl;
+        return;
+    }
     text_vram[text_cursor_row][text_cursor_col].character = vga_char;
     text_vram[text_cursor_row][text_cursor_col].fg = text_color_fg;
     text_vram[text_cursor_row][text_cursor_col].bg = text_color_bg;
@@ -54,7 +60,13 @@ void vga_C13_set_char(uint8_t character) {
 }
 
 void vga_C15_text_position(uint8_t row, uint8_t col) {
+    if (row >= text_rows) {
+        std::cerr << "row too large: " << (int)row << std::endl;
+    }
     text_cursor_row = row;
+    if (col >= text_columns) {
+        std::cerr << "col too large: " << (int)col << std::endl;
+    }
     text_cursor_col = col;
 }
 
@@ -287,7 +299,6 @@ void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uin
     SDL_SetWindowTitle(window, title);
 }
 
-constexpr uint32_t ms_per_frame = 1000 / instructions_per_display_update;
 
 void display_update(uint32_t *executed_instructions) {
 

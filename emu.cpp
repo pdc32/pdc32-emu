@@ -61,9 +61,9 @@ uint32_t get_state() {
         (pwr_get_state() << pwr_state_offset) |
         (uart_state() << uart_state_offset) |
         (vga_get_mode() << vga_mode_offset) |
-        keyboard_rx() << keyboard_rx_offset |
-        tmr_busy() << tmr_busy_offset | 
-        tmr_ovf() << tmr_ovf_offset;
+        (keyboard_rx() << keyboard_rx_offset) |
+        (tmr_busy() << tmr_busy_offset) |
+        (tmr_ovf() << tmr_ovf_offset);
 }
 
 uint32_t bus() {
@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
         }
         loadProgram(argv[1]);
     } else {
-        loadProgram("firmware/PDC32.firmware");
+        loadProgram("firmware/PDC32-skipmemcheck.firmware");
     }
 
     display_init();
