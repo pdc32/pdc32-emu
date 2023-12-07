@@ -1,12 +1,13 @@
 #ifndef VGA_H
 #define VGA_H
 
+#include "emu.h"
+
 constexpr uint32_t frames_per_second = 15;
 constexpr uint32_t keyboard_update_hz = 240;
 constexpr uint32_t ms_per_frame = 1000 / frames_per_second;
 
 // 4Mhz (baseclock) / 4 (clocks per instruction)
-constexpr uint32_t instructions_per_second = 4000000 / 4;
 constexpr uint32_t instructions_per_display_update = instructions_per_second / frames_per_second;
 constexpr uint32_t instructions_per_event_checking = instructions_per_second / keyboard_update_hz;
 
@@ -16,7 +17,7 @@ constexpr uint32_t instructions_per_event_checking = instructions_per_second / k
 int display_init();
 
 // render text buffer into VRAM, blit onto the screen
-void display_update(uint32_t *executed_instructions);
+void display_update();
 
 // shut it all down
 void display_teardown();
@@ -46,7 +47,7 @@ constexpr uint32_t vga_mode_offset = 12;
 void keyboard_B5_send(uint8_t command);
 void keyboard_queue(const char* codes);
 uint32_t keyboard_get_data();
-bool keyboard_rx();
+uint8_t keyboard_rx_state();
 
 constexpr uint32_t keyboard_rx_offset = 7;
 constexpr uint32_t keyboard_tx_offset = 8;

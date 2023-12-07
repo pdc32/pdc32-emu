@@ -17,7 +17,7 @@ bool spk_mute = true;
 bool spk_state;
 
 void audioCallback(void* userdata, Uint8* stream, int bufferLength) {
-    Uint16* buffer = (Uint16*)stream;
+    auto buffer = (Uint16*)stream;
 
     if (spk_mute){
         for (int i = 0; i < bufferLength/2; ++i) {
@@ -36,9 +36,9 @@ void audioCallback(void* userdata, Uint8* stream, int bufferLength) {
 void spk_b0_timer_ovf(uint32_t bus){
     bus &= 0xFFFFFF;
 
-    float freq = 8e6 / bus;
+    double freq = 8e6 / bus;
     cout << "SPK frequency: " << freq << " Hz" << endl;
-    frequency = freq;
+    frequency = (int)freq;
     spk_overflow = bus;
 }
 void spk_b9_timer_config(bool on, bool mute){

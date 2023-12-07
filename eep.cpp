@@ -1,4 +1,5 @@
 #include "eep.h"
+#include "emu.h"
 #include <SDL2/SDL.h>
 #include <iostream>
 #include <fstream>
@@ -15,7 +16,7 @@ uint32_t eep_data = 0;
 uint32_t eep_addr = 0;
 uint32_t eep_read_data = 0;
 uint8_t eep_busy = 0;
-uint32_t eep_clear = 0;
+uint64_t eep_clear_ticks = 0;
 
 const string& internal_filename = "build/eeprom_int.bin";
 const string& external_filename = "build/eeprom_ext.bin";
@@ -46,13 +47,13 @@ void eep_c4_serial_function(uint32_t function) {
         return;
     }
     eep_busy = 1;
-    eep_clear = SDL_GetTicks()+1;   // 1 ms per operation
+    eep_clear_ticks = get_tick_count() + instructions_per_second / 10000;   // 0.1 ms per operation (~10 per ms)
 }
 
 void eep_process() {
-    if(eep_clear && SDL_GetTicks() >= eep_clear) {
+    if(eep_clear_ticks && get_tick_count() >= eep_clear_ticks) {
         eep_busy = 0;
-        eep_clear = 0;
+        eep_clear_ticks = 0;
     }
 }
 

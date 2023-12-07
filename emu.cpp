@@ -25,7 +25,6 @@ constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
 constexpr uint32_t cache_len = 32768; // 128 KiB
 constexpr uint32_t dram_len = 8388608; // 32 MiB
 
-
 uint32_t data_literal = 0; // Data from instructions
 
 uint32_t cache_addr = 0;
@@ -61,7 +60,7 @@ uint32_t get_state() {
         (pwr_get_state() << pwr_state_offset) |
         (uart_state() << uart_state_offset) |
         (vga_get_mode() << vga_mode_offset) |
-        (keyboard_rx() << keyboard_rx_offset) |
+        (keyboard_rx_state() << keyboard_rx_offset) |
         (eep_state() << eep_state_offset) |
         (tmr_busy() << tmr_busy_offset) |
         (tmr_ovf() << tmr_ovf_offset);
@@ -293,27 +292,39 @@ void dump_memory() {
 
 uint64_t tick_count = 0;
 
-void one_frame(bool *quit) {
-    uint32_t executed_instructions = 0;
+uint64_t get_tick_count() {
+    return tick_count;
+}
 
-    for(uint32_t i=0; i<instructions_per_display_update; i++) {
-        if(tick_count % instructions_per_event_checking == 0) {
-            if(handle_events()) {
-               *quit = true;
+void emu_reset() {
+    program_counter = 0;
+}
+
+void one_frame(bool *quit) {
+    if (pwr_is_on()) {
+        for(uint32_t i=0; i<instructions_per_display_update; i++) {
+            if(tick_count % instructions_per_event_checking == 0) {
+                if(handle_events()) {
+                    *quit = true;
+                }
             }
+            if(debug) {
+                printf("%x: ", program_counter);
+            }
+            const uint32_t instruction = program[program_counter++];
+            handleInstruction(instruction);
+            if(!pwr_is_on()) break;
+            spk_process();
+            tmr_process();
+            eep_process();
+            tick_count++;
         }
-        if(debug) {
-            printf("%x: ", program_counter);
+    } else {
+        if(handle_events()) {
+            *quit = true;
         }
-        const uint32_t instruction = program[program_counter++];
-        handleInstruction(instruction);
-        spk_process();
-        executed_instructions++;
-        tmr_process();
-        tick_count++;
     }
-    eep_process();
-    display_update(&executed_instructions);
+    display_update();
 }
 
 #ifdef __EMSCRIPTEN__
