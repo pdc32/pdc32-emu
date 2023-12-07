@@ -25,8 +25,6 @@ constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
 constexpr uint32_t cache_len = 32768; // 128 KiB
 constexpr uint32_t dram_len = 8388608; // 32 MiB
 
-// 4Mhz (baseclock) / 4 (clocks per instruction) / 60hz (display fps)
-constexpr uint32_t instructions_per_display_update = 16666;
 
 uint32_t data_literal = 0; // Data from instructions
 
@@ -63,9 +61,9 @@ uint32_t get_state() {
         (pwr_get_state() << pwr_state_offset) |
         (uart_state() << uart_state_offset) |
         (vga_get_mode() << vga_mode_offset) |
-        keyboard_rx() << keyboard_rx_offset |
-        tmr_busy() << tmr_busy_offset | 
-        tmr_ovf() << tmr_ovf_offset;
+        (keyboard_rx() << keyboard_rx_offset) |
+        (tmr_busy() << tmr_busy_offset) |
+        (tmr_ovf() << tmr_ovf_offset);
 }
 
 uint32_t bus() {
@@ -292,12 +290,17 @@ void dump_memory() {
     fclose(cache_fp);
 }
 
-void one_frame(bool *quit) {
-    if(handle_events()) *quit = true;
+uint64_t tick_count = 0;
 
+void one_frame(bool *quit) {
     uint32_t executed_instructions = 0;
 
     for(uint32_t i=0; i<instructions_per_display_update; i++) {
+        if(tick_count % instructions_per_event_checking == 0) {
+            if(handle_events()) {
+               *quit = true;
+            }
+        }
         if(debug) {
             printf("%x: ", program_counter);
         }
@@ -306,6 +309,7 @@ void one_frame(bool *quit) {
         spk_process();
         executed_instructions++;
         tmr_process();
+        tick_count++;
     }
 
     display_update(&executed_instructions);
@@ -336,13 +340,12 @@ int main(int argc, char **argv) {
         }
         loadProgram(argv[1]);
     } else {
-        loadProgram("firmware/PDC32.firmware");
+        loadProgram("firmware/PDC32-skipmemcheck.firmware");
     }
 
     display_init();
     spk_init();
     eep_init();
-
     #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(em_mainloop, 0, 1);
     #else
