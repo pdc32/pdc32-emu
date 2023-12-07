@@ -11,6 +11,7 @@
 #include "keyboard/scancodes.cpp"
 
 #include "pwr.h"
+#include "emu.h"
 
 constexpr uint8_t text_columns = 80;
 constexpr uint8_t text_rows = 30;
@@ -294,18 +295,21 @@ void update_window_title(SDL_Window* window, int frames, Uint32 start_ticks, Uin
     float avg_ips = executed_instructions / ((SDL_GetTicks() - start_ticks) / 1000.0f);
 
     char title[100];
-    snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f", avg_fps, avg_ips);
+    snprintf(title, sizeof(title), "PDC32 Emulator - FPS: %.2f - IPS: %.2f %s", avg_fps, avg_ips, pwr_is_on() ? "" : "- OFF");
 
     SDL_SetWindowTitle(window, title);
 }
 
 
-void display_update(uint32_t *executed_instructions) {
-
+void display_update() {
     static Uint32 last_visit = 0;
     static Uint32 last_blink = 0;
     static Uint32 fps_ticks = 0;
     static Sint32 frames = 0;
+    static uint64_t last_ticks = get_tick_count();
+    if(!pwr_is_on()) {
+        memset(text_vram, 0, sizeof(text_vram));
+    }
     vga_update_framebuffer(framebuffer);
 
     SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
@@ -325,12 +329,12 @@ void display_update(uint32_t *executed_instructions) {
 
     frames++;
     if (SDL_TICKS_PASSED(SDL_GetTicks(), fps_ticks + 500)) {
-        update_window_title(win, frames, fps_ticks, *executed_instructions);
-        *executed_instructions = 0;
+        update_window_title(win, frames, fps_ticks, get_tick_count() - last_ticks);
 
         // Reset variables for the next second
         fps_ticks = SDL_GetTicks();
         frames = 0;
+        last_ticks = get_tick_count();
     }
 
     last_visit = SDL_GetTicks();
@@ -384,8 +388,8 @@ uint32_t keyboard_get_data() {
     }
 }
 
-bool keyboard_rx() {
-    return keycodes_queue.empty() == false;
+uint8_t keyboard_rx_state() {
+    return keycodes_queue.empty() == false ? 1 : 0;
 }
 
 void keyboard_reset() {

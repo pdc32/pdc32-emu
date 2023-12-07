@@ -32,7 +32,7 @@ void uart_b2_config(uint32_t word) {
     bool parity_odd = (word >> 16) & 0b1;
     uint8_t databits = 6 + ((word >> 17) & 0b11);
     bool parity_enabled = (word >> 19) & 0b1;
-    uint8_t stopbits = 1 + (word >> 20);
+    uint8_t stopbits = 1 + ((word >> 20) & 0b1);
 
     uart_data_bits = databits;
 
