@@ -62,6 +62,7 @@ uint32_t get_state() {
         (uart_state() << uart_state_offset) |
         (vga_get_mode() << vga_mode_offset) |
         (keyboard_rx() << keyboard_rx_offset) |
+        (eep_state() << eep_state_offset) |
         (tmr_busy() << tmr_busy_offset) |
         (tmr_ovf() << tmr_ovf_offset);
 }
@@ -214,13 +215,13 @@ void handleInstruction(const uint32_t instruction) {
         tmr_C1_set_time(bus() & 0xFFFFFF);
     } else if(type == C2_DRIVE_SERIAL_DATA) {
         if(debug) printf("C2! %x ; SERIAL MEM DATA\n", bus());
-        // TODO: implement
+        eep_c2_serial_data(bus());
     } else if(type == C3_DRIVE_SERIAL_ADDR) {
         if(debug) printf("C3! %x ; SERIAL MEM ADDR\n", bus());
-        // TODO: implement
+        eep_c3_serial_addr(bus());
     } else if(type == C4_DRIVE_SERIAL_FUNCTION) {
         if(debug) printf("C4! %x ; SERIAL MEM FCN\n", bus());
-        // TODO: implement
+        eep_c4_serial_function(bus());
     } else if(type == C7_VGA_TEXT_COLOR) {
         if(debug) printf("C7 %x ; VGA_COLOR %x\n", bus(), bus());
         uint8_t fg = (bus() >> 16) & 0xff;
@@ -311,7 +312,7 @@ void one_frame(bool *quit) {
         tmr_process();
         tick_count++;
     }
-
+    eep_process();
     display_update(&executed_instructions);
 }
 

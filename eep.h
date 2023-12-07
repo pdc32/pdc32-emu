@@ -8,7 +8,7 @@ uint32_t eep_read();
 void eep_c2_serial_data(uint32_t);
 void eep_c3_serial_addr(uint32_t);
 void eep_c4_serial_function(uint32_t);
-
+void eep_process();
 void eep_init();
 void eep_teardown();
 
