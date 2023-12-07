@@ -111,10 +111,10 @@ void vga_update_framebuffer(uint32_t *framebuffer) {
         uint8_t bg = text_vram[row][col].bg;
 
         if(enable_blink && blink_status) {
-            if(text_vram[row][col].fg & 0x80) {
+            if((text_vram[row][col].fg & 0x80) == 0) {
                 fg = 0;
             }
-            if(text_vram[row][col].bg & 0x80) {
+            if((text_vram[row][col].bg & 0x80) == 0) {
                 bg = 0;
             }
         }

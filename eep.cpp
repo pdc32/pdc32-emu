@@ -6,11 +6,11 @@
 #include <string>
 using namespace std;
 
-constexpr uint32_t eep_internal_len = 2048;
-uint32_t eep_internal[eep_internal_len];
+constexpr uint32_t eep_internal_len = 8192;
+uint8_t eep_internal[eep_internal_len];
 
-constexpr uint32_t eep_external_len = 8192;
-uint32_t eep_external[eep_external_len];
+constexpr uint32_t eep_external_len = 32768;
+uint8_t eep_external[eep_external_len];
 
 uint32_t eep_data = 0;
 uint32_t eep_addr = 0;
@@ -33,15 +33,55 @@ void eep_c2_serial_data(uint32_t data) {
 void eep_c3_serial_addr(uint32_t addr) {
     eep_addr = addr;
 }
+uint32_t read_word(uint32_t addr, bool internal) {
+    uint32_t eep_len = internal ? eep_internal_len : eep_external_len;
+    if(addr >= eep_len) return 0xFFFFFFFF;
+    uint32_t addr0 = (addr + 0) % eep_len;
+    uint32_t addr1 = (addr + 1) % eep_len;
+    uint32_t addr2 = (addr + 2) % eep_len;
+    uint32_t addr3 = (addr + 3) % eep_len;
+
+    if(internal) {
+        return eep_internal[addr0] | eep_internal[addr1] << 8 | eep_internal[addr2] << 16 | eep_internal[addr3] << 24;
+    }
+    return eep_external[addr0] | eep_external[addr1] << 8 | eep_external[addr2] << 16 | eep_external[addr3] << 24;
+}
+
+void write_word(uint32_t addr, uint32_t data, bool internal) {
+    uint32_t eep_len = internal ? eep_internal_len : eep_external_len;
+    if(addr >= eep_len) return;
+
+    uint32_t addr0 = (addr + 0) % eep_len;
+    uint32_t addr1 = (addr + 1) % eep_len;
+    uint32_t addr2 = (addr + 2) % eep_len;
+    uint32_t addr3 = (addr + 3) % eep_len;
+    uint32_t data0 = data & 0xFF;
+    uint32_t data1 = (data >> 8) & 0xFF;
+    uint32_t data2 = (data >> 16) & 0xFF;
+    uint32_t data3 = (data >> 24) & 0xFF;
+
+    if(internal) {
+        eep_internal[addr0] = data0;
+        eep_internal[addr1] = data1;
+        eep_internal[addr2] = data2;
+        eep_internal[addr3] = data3;
+    } else {
+        eep_external[addr0] = data0;
+        eep_external[addr1] = data1;
+        eep_external[addr2] = data2;
+        eep_external[addr3] = data3;
+    }
+}
+
 void eep_c4_serial_function(uint32_t function) {
     if(function == eep_read_internal) {
-        eep_read_data = eep_internal[eep_addr % eep_internal_len];
+        eep_read_data = read_word(eep_addr, true);
     } else if(function == eep_read_external) {
-        eep_read_data = eep_external[eep_addr % eep_external_len];
+        eep_read_data = read_word(eep_addr, false);
     }else if(function == eep_write_internal) {
-        eep_internal[eep_addr % eep_internal_len] = eep_data;
+        write_word(eep_addr, eep_data, true);
     } else if(function == eep_write_external) {
-        eep_external[eep_addr % eep_external_len] = eep_data;
+        write_word(eep_addr, eep_data, false);
     } else {
         std::cerr << "UNKNOWN EEPROM OPERATION " << function << std::endl;
         return;
