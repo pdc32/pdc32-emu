@@ -160,6 +160,7 @@ int handle_events()
             return 1;
         }
         if(e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
+            if(e.key.repeat != 0) continue;
             auto found = ps2_map.find(e.key.keysym.scancode);
             if (found == ps2_map.end()) {
                 std::cerr << "Key not found: " << e.key.keysym.scancode << std::endl;
