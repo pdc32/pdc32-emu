@@ -45,7 +45,7 @@ using namespace std;
 struct RTC_DS1387 rtc_ds1387;
 
 void ds1387_init(){
-    # std::cout << "RTC: Init" << std::endl;
+    // std::cout << "RTC: Init" << std::endl;
     rtc_ds1387.nvram_file = fopen("rtc_nvram.bin", "wb");
     if(rtc_ds1387.nvram_file == nullptr) {
 		std::cerr << "RTC: Cannot open nvram file" << std::endl;
@@ -59,22 +59,22 @@ void ds1387_set_cmd(uint32_t bus){
 
     // RTC operation. Get Calendar, Registers and user nram data
     if (~connected_lines & CS) {
-        # std::cout << "RTC: Operation" << std::endl;
+        // std::cout << "RTC: Operation" << std::endl;
         // RTC Address strobe
         if (connected_lines & WR && connected_lines & RD  && connected_lines & ALE) {
-            # std::cout << "RTC: Address strobe" << std::endl;
+            // std::cout << "RTC: Address strobe" << std::endl;
             rtc_ds1387.reg_index = rtc_ds1387.data_reg;
             return;
         }
         // Write choosen register
         if (~connected_lines & WR && connected_lines & RD  && connected_lines & ALE) {
-            # std::cout << "RTC: Write choosen register" << std::endl;
+            // std::cout << "RTC: Write choosen register" << std::endl;
             rtc_ds1387.regs_nvram[rtc_ds1387.reg_index] = rtc_ds1387.data_reg;
             return;
         }
         // Read choosen register
         if (connected_lines & WR && ~connected_lines & RD  && connected_lines & ALE) {
-            # std::cout << "RTC: Write choosen register" << std::endl;
+            // std::cout << "RTC: Write choosen register" << std::endl;
             rtc_ds1387.data_reg = rtc_ds1387.regs_nvram[rtc_ds1387.reg_index];
             return;
         }
@@ -85,7 +85,7 @@ void ds1387_set_cmd(uint32_t bus){
         else
             if (~connected_lines & WER) {
                 rtc_ds1387.static_ram[rtc_ds1387.ram_address] = rtc_ds1387.data_reg;
-                # std::cout << "RTC: write to static ram" << std::endl;
+                // std::cout << "RTC: write to static ram" << std::endl;
             }
             else {
                 // AS0 latches the lower eight bits of static ram address
@@ -105,12 +105,12 @@ void ds1387_set_cmd(uint32_t bus){
                 }
                 if (~connected_lines & OER) {
                     rtc_ds1387.data_reg = rtc_ds1387.static_ram[rtc_ds1387.ram_address];
-                    # std::cout << "RTC: Reading from static ram" << std::endl;
+                    // std::cout << "RTC: Reading from static ram" << std::endl;
                     return;
                 }
                  if (~connected_lines & WER) {
                     rtc_ds1387.static_ram[rtc_ds1387.ram_address] = rtc_ds1387.data_reg;
-                    # std::cout << "RTC: Writing to static ram" << std::endl;
+                    // std::cout << "RTC: Writing to static ram" << std::endl;
                     return;
                 }
 
