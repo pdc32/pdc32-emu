@@ -9,7 +9,7 @@ using namespace std;
 constexpr uint32_t eep_internal_len = 8192;
 uint8_t eep_internal[eep_internal_len];
 
-constexpr uint32_t eep_external_len = 32768;
+constexpr uint32_t eep_external_len = 65536;
 uint8_t eep_external[eep_external_len];
 
 uint32_t eep_data = 0;
@@ -18,8 +18,8 @@ uint32_t eep_read_data = 0;
 uint8_t eep_busy = 0;
 uint64_t eep_clear_ticks = 0;
 
-const string& internal_filename = "build/eeprom_int.bin";
-const string& external_filename = "build/eeprom_ext.bin";
+const string& internal_filename = "res/eeprom_int.bin";
+const string& external_filename = "res/eeprom_ext.bin";
 
 uint32_t eep_state() {
     return eep_busy;
