@@ -1,0 +1,457 @@
+
+=======================Variables de Configuración Rutinas====================
+
+IMPORTANTE: Las variables poseen dirección alta en 254
+
+VARIABLE GOSUB=254:232 Es de uso universal
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===BOX===
+DIRECCION:126/0
+
+
+X=255
+X1=254
+Y=253
+y1=252
+GrafHor=249
+GrafVer=248
+EsqsI=247
+EsqsD=246
+EsqiI=245
+EsqiD=244
+CuadI=243
+CuadHor=242
+CuadD=241
+CuadAltura=238
+Sombra=237
+ColorChar=236
+ColorBack=234
+SombraOk=240 -> (0 o 1)
+CuadOk=239 -> (0 o 1)
+============================Variables Auxiliares=============================
+XX=251
+YY=250
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===TXT=== 
+DIRECCION:125/65
+
+
+X=228
+Y=230
+BUFFER=251:000 al 253/255
+============================Variables Auxiliares=============================
+A=229
+X1=231
+Byte=227
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===SOUND===
+DIRECCION:125/8
+
+
+TONO=226
+PERIODO=225
+HSND=225.b24  Habilita SPK -> b24 variable de 254:225  (0=OFF o 1=ON)
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===KBD===
+DIRECION:124/155 
+
+
+*A=224
+*B=223
+KBDout=222 Al leer dato, luego grabarle el valor de 0x03 para vaciar buffer
+BUFFER=250:192 al 250:255
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===TMR2===
+DIRECCION:124/97
+
+
+TIME=221
+HAB=221.b24 Habilita TIMER2 -> b24 variable de 254:221 (0=OFF o 1=ON)
+RETURN=254:220  -> Cargar Direccion de salto luego de completar TIEMPO
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===BCD_ASCII===
+DIRECCION:123/186
+
+
+BCD(X)=254:210 al 254:219
+============================Variables Auxiliares=============================
+A=198
+AUX=197
+ZERO=196
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===BIN_BCD===
+DIRECCION:122/77
+
+
+DATO=254:200 -> Aqui se almacena el dato a convertir a BCD
+============================Variables Auxiliares=============================
+BCD(X)=254:210 al 254:219
+A=201
+B=202
+MARCA=203
+MARCA1=204
+AUX=205
+=================================Constantes==================================
+DIRECCION:122/85
+PONDE(X)=254:163 al 254:194
+PONDE1(X)=254:62 al 254:66
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===REFRESH VIDEO===
+DIRECCION:121/210
+
+
+RETURN=254:232
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===APAGAR SISTEMA!===
+DIRECCION:120/140
+
+ColorRecover=141
+AUX=127
+OnOff=126
+Incr=125
+Decr=124
+Suelta=123
+RETURN=254:122
+AUX=106
+AUX1=105
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*Rutina ===READ RTC===
+DIRECCION:119/220
+
+MIN=57
+HOUR=56
+DAY=61
+DATE=58
+MONTH=59
+YEAR=60
+SECOND=64
+RAM_CHECK=5:85-> Almacenar Valor 85(Sirve para corroborar RTC presente/Ok!)
+=============================================================================
+*Rutina ===WRITE RTC===
+DIRECCION:119/150
+
+MIN=57
+HOUR=56
+DAY=66
+DATE=58
+MONTH=59
+YEAR=60
+SECOND=64
+=============================================================================
+*Rutina ===CONFIG COM1===
+DIRECCION:119/40
+
+AUX=254:121
+=============================================================================
+*Rutina ===CONFIG KBD===
+DIRECCION:118/200
+
+AUX=254:120
+AUX1=254:119
+=============================================================================
+*Rutina ===PRINT TIME===
+DIRECCION:118/125
+
+DOSDIGIT=254:118 =1 Imprime Dos Dígitos/ =0 Imprime Un Dígito si es igual a cero
+RETURN=254:117 
+=============================================================================
+*Rutina ===BUFFER UART===
+DIRECCION:117/225
+
+*A=116
+*B=115
+UartOut=114
+AUX=113
+UARTOut=114 Al leer dato, luego grabarle el valor de 0x33 para vaciar buffer
+
+BUFFER=246:000 al 249:255
+=============================================================================
+*Rutina ===CURSOR ON SCREEN===
+DIRECCION:113/200
+
+Type Cursor=250:61
+RETURN=254:122 
+=============================================================================
+*Rutina ===DECOD KEY===
+DIRECCION:114/0
+
+PulsCaps=254:112
+CapsB=111
+PulsShiftL=110
+PulsNum=109
+Numb=108
+VAR=107
+=============================================================================
+*Rutina ===DECOD COMMAND===
+DIRECCION:110/0
+
+VAR=254:107
+*a=254:104
+b=254:103 (RESERVA, NO USADO!)
+asig=254:102
+BUFFER=245:175 al 245:255
+
+RETURN 254:101  
+=============================================================================
+*Rutina ===SCROLL TEXT===
+DIRECCION:108/200
+
+AUX=254:100
+PERMISO=254:99      =0 NO GRABA      =1 GRABA
+AUX1=254:98
+Y1=254:97
+X=254:96
+YY1=254:95
+BUFFER SCROLL=226:000 al 245:100
+=============================================================================
+*Rutina ===PRODUCTO===
+DIRECCION:107/60
+
+FACTOR_A=254:93    <- Colocar factor a multiplicar
+FACTOR_B=254:92    <- Colocar factor a multiplicar
+RESULT_L=254:91    -> Resultado
+RESULT_H=254:90 (AUN NO IMPLEMENTADO)
+COUNT=254:89
+=============================================================================
+*Rutina ===RELACION===
+DIRECCION:105/105
+
+DIVIDENDO=254:88   <- Colocar valor
+DIVISOR=254:87     <- Colocar valor
+RESULTADO=254:83   -> Resultado, (el dividendo almacena el RESTO luego de la división)
+
+divdesplaz=254:86
+divcomplmn=254:85
+mascara=254:84
+aux=254:82
+-----------------------------------------------------------------------------
+Para obtener la parte decimal, multiplicar el RESTO por un factor de 100, 1000, 10000, etc. según cantidad de digitos,
+luego dividir por el divisor.
+=============================================================================
+*Rutina ===PORCENTAJE===
+DIRECCION:106/38
+
+TOTAL=254:87
+PARCIAL=254:92
+
+X=PARCIAL.100%/TOTAL
+=============================================================================
+=============================================================================
+*Rutina ===BIOS===
+DIRECCION:0/210
+
+*a=254:67  <-Inicia en 250:48
+*b=254:68  <-Inicia en 3:224-239(Posición de memoria EEPROM interna)
+=============================================================================
+*Rutina ===BACK_SPACE===
+DIRECCION:107/122
+=============================================================================
+*Rutina ===CMD:===
+DIRECCION:108/12
+
+ESTADO=254:94      (=253 y =254) Equiv a presionar ENTER      =255 Print "CMD:"
+
+RETURN=254:122
+=============================================================================
+*Rutina ===ENTER_DETECT===
+DIRECCION:108/50
+=============================================================================
+*Rutina ===GRABA_EEPROM(Inside)===
+DIRECCION:105/252
+
+ADDR_EEP=254/80
+DATA_EEP=254/81
+
+RETURN=254:122
+=============================================================================
+*Rutina ===LEE_EEPROM(Inside)===
+DIRECCION:106/17
+
+ADDR_EEP=254/80
+DATA_EEP=254/81  <- Devuelve dato
+
+RETURN=254:122
+=============================================================================
+*Rutina ===CHECK_BLOCK_FREE===
+DIRECCION:107/0
+
+ADR_BLOCK=255:253 <- Se inicia en 4:0 (El max. valor dependerá de la capacidad de la tarjeta)
+                     IF ADR_BLOCK = 255:255 No hay bloques libres.
+
+RETURN=254:101
+=============================================================================
+*Rutina ===CHECK_TABLE_FREE===
+DIRECCION:117/25
+
+INDICE=255:255 <- Lee ìndice 
+TABLA_INDICE=255:251 <- Devuelve direccion libre en tabla.
+
+RETURN=254:101
+=============================================================================
+*Rutina ===SHIFT===
+DIRECCION:112/157
+
+VALOR=255:231  <- Devuelve un valor de 4 bytes
+END=255:229    <- Aqui se carga el ultimo BYTE a desplazar
+AUX=255:228
+COUNT=255:227  <- Se inicia en CERO en programa principal
+
+Ejem: Se desea empaquetar desde la direccion 0:0 a 0:3 en un único DWORD(4 bytes) 
+Entonces debe cargarse el valor 0:3 en END, y los bytes de cada
+direccion, se empaquetarán en VALOR.
+=============================================================================
+
+*****************************************************************************
+******************************** COMANDOS ***********************************
+*****************************************************************************
+
+=============================================================================
+*comando ===CLR===
+DIRECCION:107/200
+=============================================================================
+*Comando ===FORMAT===
+DIRECCION:109/90
+
+RETURN=254:101
+=============================================================================
+*Comando INTERNO ===GRABA_NOMBRE_ARCHIVO===
+DIRECCION:103/14
+
+RETURN=254:101
+=============================================================================
+*Comando INTERNO ===GRABA_EXTENSION_ARCHIVO===
+DIRECCION:102/172
+
+RETURN=254:101
+=============================================================================
+*Comando INTERNO ===GRABA_BLOQUE_PUNTERO_CAPACIDAD_TIME_DATE_ARCHIVO===
+DIRECCION:102/25
+
+RETURN=254:101
+=============================================================================
+*Comando ===MAKE===
+DIRECCION:101/64
+
+PERMISO=255:245
+RETURN=254:232
+=============================================================================
+*Comando INTERNO ===COMPARE_FILE===
+DIRECCION:101/165
+
+INDEX=255:240  
+*BUFFER=255:244 <- Utiliza el buffer de linea de comandos (245:175-255)
+TOPE=255:243
+AUX=255:241
+
+                   IF *BUFFER = 245:191 Entonces el archivo EXISTE
+
+RETURN=254:101
+=============================================================================
+*Comando ===DIR===
+DIRECCION:100/101
+
+PERMISO=255:237
+
+RETURN=254:101?
+=============================================================================
+*Comando INTERNO ===CONVERSOR_MAYUSCULAS===
+DIRECCION:99/238
+
+*b=255:236
+*c=255:235
+BUFFER=245:94-174
+
+=============================================================================
+*Comando ===DEL===
+DIRECCION:99/124
+
+PERMISO=255:234
+=============================================================================
+*Comando ===F3===
+DIRECCION:113/110
+=============================================================================
+*Comando ===RMVE===
+DIRECCION:112/240
+=============================================================================
+*Comando INTERNO ===WRITE LABEL===
+DIRECCION:98/240
+=============================================================================
+=============================================================================
+*Comando INTERNO ===PRINT LABEL===
+DIRECCION:98/170
+=============================================================================
+=============================================================================
+*Comando INTERNO ===LOAD DATA===
+DIRECCION:97/197
+
+INDEX=255:240    <- Lee ìndice para cargar datos en RAM
+*Buff=255:224    <- Devuelve valor cantidad de datos cargados
+
+RETURN=255:222
+=============================================================================
+=============================================================================
+*Comando INTERNO ===MARCO EDIT===
+DIRECCION:97/89
+=============================================================================
+=============================================================================
+*Comando ===EDIT===
+DIRECCION:94/110
+=============================================================================
+=============================================================================
+*Comando INTERNO ===SAVE DATA===
+DIRECCION:93/0
+
+PUNTERO=255:201
+INCR=255:200
+WORD=255:199
+BYTE=255:198
+ADD_LIB=255:253
+*Buff=255:224
+TOPE=255:213   <- Conocida con la letra (b) en otras rutinas
+AUX=255:197
+
+===FIN ARCHIVO===
+DIRECCION:93/196
+Esta funciòn es de uso interno por SAVE.
+Se encarga de cerrar el archivo y actualizar atributos como HORA/FECHA/ESPACIO USADO, etc.
+
+
+RETURN=255:226  <- Retorna a programa principal
+RETURN=255:180  <- Retorna a llamado de falla cuàndo NO hay espacio en disco
+=============================================================================
+=============================================================================
+*Comando INTERNO ===SPACE FREE===
+DIRECCION:94/5
+
+ADDBL=255:253
+AUX=255:196    <- Si retorna el valor FFFF, no hay espacio libre
+
+RETURN=255:195
+=============================================================================
+=============================================================================
+*Comando INTERNO ===DRAM DETECT===
+DIRECCION:89/149
+
+ADDR=255:179
+DRAM=255:178
+PERMI=255:177
+
+Retorna automàticamente a inicio arranque
+=============================================================================
+=============================================================================
+
+*Comando ===COPY===
+DIRECCION:90/104
+
+Utiliza las funciones MAKE, RMVE y SAVE.
+Genera los retornos automàticamente.
+=============================================================================
+*Comando ===RNME===
+DIRECCION:90/18
+
+NAME=255:249
+*Buff=255:251
+AUX=255:181
+
+Retorna automàticamente a CMD
+=============================================================================
