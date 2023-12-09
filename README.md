@@ -6,6 +6,7 @@ Microinstruction-level emulator for PDC32, a super cool post-apocalyptic compute
 ![Photo of the computer](docs/photo.jpg)
 
 [You can emulate it from your browser clicking here! (No need to install anything)](https://pdc32.github.io/pdc32-emu/)
+[Getting started guide](docs/getting_started.md)
 
 How to use the computer?
 - [Operating System commands](docs/os_commands.md)
