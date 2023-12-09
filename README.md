@@ -15,6 +15,7 @@ How to use the computer?
 ## Other resources 
 - [Variables used by routines](docs/used_variables.txt)
 - [Block diagram](docs/pdc32.drawio.png)
+- [Schematics](docs/schematics/)
 - [Various videos](https://www.youtube.com/@robertogudino1919)
 - [Forum posts](https://www.forosdeelectronica.com/threads/mini-pc-desarrollada-en-l%C3%B3gica-discreta.162081/)
 - [Design doc (in Spanish)](docs/PDC32_g.pdf)
