@@ -1,0 +1,57 @@
+﻿============================================================================
+A0 REG DATA DRAM
+A1 REG Carry IN  (bit 3)
+A2 RETURN
+A3 A<=B
+A4 A>=B
+A5 GOTO sin condición
+A6 Ck STEP_UP ADDR DRAM 
+A7 REG ADDR DRAM
+A8 A!=B
+A9 REG (A) ALU
+A10 REG Carga bit16-bit31 en parte alta 
+A11 WRITE DRAM
+A12 REG Sel 3-S
+A13 REG Return Automatico (bit 15)
+A14 REG (B) ALU
+A15 REG Comparador ALU (bit 0, 1, 2)
+============================================================================
+B0 REG Sel OFV Timer/Speaker
+B1 REG Sel OFV UART
+B2 REG Config UART
+B3 REG DATA Tx UART
+B4 - Libre Slot Trasero
+B5 REG DATA Tx KBD
+B6 DATA/ADDRESS RTC DS1387
+B7 CONTROL COMMAND RTC DS1387
+B8 A<B
+B9 Sel Funct TMR/SPK (bit 4, 5)
+B10 A>B
+B11 A=B
+B12 REG DATA Caché
+B13 REG ADDR Caché
+B14 REG ON/OFF ATX PWR (bit 11)
+B15 WRITE Caché
+============================================================================
+C0 SEL TMR
+C1 SEL TIME(timer)
+C2 REG DATA DRIVE SERIAL(32bits)
+C3 REG ADDR DRIVE SERIAL(19bits OUT ADDR EEP, 10bits IN ADDR EEP)
+C4 SEL FUNCT DRIVE SERIAL(b0-b2) 1=RD IN EEP, 3=WR IN EEP, 4=RD OUT EEP, 6=WR OUT EEP
+C5 -
+C6 -
+C7  SEL COLOR TEXT
+       (b16-b23) 1er. Plano
+       (b24-b31) Fondo
+C8 WRITE VRAM VGA
+C9 SEL FUNC. VGA (b0-b1)
+      00=Mode Graphic
+      01=Transfer Data at Buffer
+      10= Transfer Text
+      11= Mode Text
+C10 REG BLINK TEXT (b12=1 ON)
+C11 REG DATA COLOR PIXEL VGA (b0-b7)
+C12 WRITE CMD TEXT 
+C13 REG SEL ASCII RAM TEXT (b0-b7)
+C14 REG ADDR XY PIXEL VGA (b0-b18)
+C15 REG LOCATE XY TEXT(b0-b11)
