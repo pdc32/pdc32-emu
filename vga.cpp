@@ -79,7 +79,9 @@ SDL_Window* win;
 SDL_Renderer* ren;
 SDL_Texture* tex;
 SDL_Texture* power_button_tex;
+SDL_Texture* paste_button_tex;
 SDL_Rect power_button_rect = {screen_width-16,0,16,16};
+SDL_Rect paste_button_rect = {screen_width-16, 20,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
 
@@ -152,6 +154,118 @@ const char* format_as_hex_pairs(const char* sig_code) {
 
 bool power_button_pressed = false;
 
+std::queue<const char*> keycodes_paste;
+void keyboard_paste_text(char* text) {
+    for(size_t i=0;i<strlen(text);i++) {
+        char character = text[i];
+        SDL_Scancode scancode0 = SDL_SCANCODE_UNKNOWN, scancode1 = SDL_SCANCODE_UNKNOWN;
+        if(character == '\n') scancode0 = SDL_SCANCODE_RETURN;
+        if(character == ' ') scancode0 = SDL_SCANCODE_SPACE;
+        if(character == '!') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_1;
+        if(character == '"') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_APOSTROPHE;
+        if(character == '$') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_4;
+        if(character == '%') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_5;
+        if(character == '&') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_7;
+        if(character == '\'') scancode0 = SDL_SCANCODE_APOSTROPHE;
+        if(character == '(') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_9;
+        if(character == ')') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_0;
+        if(character == '*') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_8;
+        if(character == '+') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_EQUALS;
+        if(character == ',') scancode0 = SDL_SCANCODE_COMMA;
+        if(character == '-') scancode0 = SDL_SCANCODE_MINUS;
+        if(character == '.') scancode0 = SDL_SCANCODE_PERIOD;
+        if(character == '/') scancode0 = SDL_SCANCODE_SLASH;
+        if(character == '0') scancode0 = SDL_SCANCODE_0;
+        if(character == '1') scancode0 = SDL_SCANCODE_1;
+        if(character == '2') scancode0 = SDL_SCANCODE_2;
+        if(character == '3') scancode0 = SDL_SCANCODE_3;
+        if(character == '4') scancode0 = SDL_SCANCODE_4;
+        if(character == '5') scancode0 = SDL_SCANCODE_5;
+        if(character == '6') scancode0 = SDL_SCANCODE_6;
+        if(character == '7') scancode0 = SDL_SCANCODE_7;
+        if(character == '8') scancode0 = SDL_SCANCODE_8;
+        if(character == '9') scancode0 = SDL_SCANCODE_9;
+        if(character == ':') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_SEMICOLON;
+        if(character == ';') scancode0 = SDL_SCANCODE_SEMICOLON;
+        if(character == '<') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_COMMA;
+        if(character == '=') scancode0 = SDL_SCANCODE_EQUALS;
+        if(character == '>') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_PERIOD;
+        if(character == '?') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_SLASH;
+        if(character == '@') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_2;
+        if(character == 'A') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_A;
+        if(character == 'B') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_B;
+        if(character == 'C') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_C;
+        if(character == 'D') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_D;
+        if(character == 'E') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_E;
+        if(character == 'F') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_F;
+        if(character == 'G') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_G;
+        if(character == 'H') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_H;
+        if(character == 'I') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_I;
+        if(character == 'J') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_J;
+        if(character == 'K') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_K;
+        if(character == 'L') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_L;
+        if(character == 'M') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_M;
+        if(character == 'N') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_N;
+        if(character == 'O') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_O;
+        if(character == 'P') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_P;
+        if(character == 'Q') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_Q;
+        if(character == 'R') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_R;
+        if(character == 'S') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_S;
+        if(character == 'T') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_T;
+        if(character == 'U') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_U;
+        if(character == 'V') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_V;
+        if(character == 'W') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_W;
+        if(character == 'X') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_X;
+        if(character == 'Y') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_Y;
+        if(character == 'Z') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_Z;
+        if(character == '[') scancode0 = SDL_SCANCODE_LEFTBRACKET;
+        if(character == '\\') scancode0 = SDL_SCANCODE_BACKSLASH;
+        if(character == ']') scancode0 = SDL_SCANCODE_RIGHTBRACKET;
+        if(character == '^') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_6;
+        if(character == '_') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_MINUS;
+        if(character == '`') scancode0 = SDL_SCANCODE_GRAVE;
+        if(character == 'a') scancode0 = SDL_SCANCODE_A;
+        if(character == 'b') scancode0 = SDL_SCANCODE_B;
+        if(character == 'c') scancode0 = SDL_SCANCODE_C;
+        if(character == 'd') scancode0 = SDL_SCANCODE_D;
+        if(character == 'e') scancode0 = SDL_SCANCODE_E;
+        if(character == 'f') scancode0 = SDL_SCANCODE_F;
+        if(character == 'g') scancode0 = SDL_SCANCODE_G;
+        if(character == 'h') scancode0 = SDL_SCANCODE_H;
+        if(character == 'i') scancode0 = SDL_SCANCODE_I;
+        if(character == 'j') scancode0 = SDL_SCANCODE_J;
+        if(character == 'k') scancode0 = SDL_SCANCODE_K;
+        if(character == 'l') scancode0 = SDL_SCANCODE_L;
+        if(character == 'm') scancode0 = SDL_SCANCODE_M;
+        if(character == 'n') scancode0 = SDL_SCANCODE_N;
+        if(character == 'o') scancode0 = SDL_SCANCODE_O;
+        if(character == 'p') scancode0 = SDL_SCANCODE_P;
+        if(character == 'q') scancode0 = SDL_SCANCODE_Q;
+        if(character == 'r') scancode0 = SDL_SCANCODE_R;
+        if(character == 's') scancode0 = SDL_SCANCODE_S;
+        if(character == 't') scancode0 = SDL_SCANCODE_T;
+        if(character == 'u') scancode0 = SDL_SCANCODE_U;
+        if(character == 'v') scancode0 = SDL_SCANCODE_V;
+        if(character == 'w') scancode0 = SDL_SCANCODE_W;
+        if(character == 'x') scancode0 = SDL_SCANCODE_X;
+        if(character == 'y') scancode0 = SDL_SCANCODE_Y;
+        if(character == 'z') scancode0 = SDL_SCANCODE_Z;
+        if(character == '{') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_LEFTBRACKET;
+        if(character == '|') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_BACKSLASH;
+        if(character == '}') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_RIGHTBRACKET;
+        if(character == '~') scancode0 = SDL_SCANCODE_LSHIFT, scancode1 = SDL_SCANCODE_GRAVE;
+
+        if(scancode0 != SDL_SCANCODE_UNKNOWN) {
+            keycodes_paste.push(ps2_map.at(scancode0).key_make);
+            if(scancode1 != SDL_SCANCODE_UNKNOWN) {
+                keycodes_paste.push(ps2_map.at(scancode1).key_make);
+                keycodes_paste.push(ps2_map.at(scancode1).key_break);
+            }
+            keycodes_paste.push(ps2_map.at(scancode0).key_break);
+        }
+    }
+}
+
 int handle_events()
 {
     SDL_Event e;
@@ -184,6 +298,11 @@ int handle_events()
                 power_button_pressed = true;
                 pwr_button_press(true);
             }
+
+            if (mouseX >= paste_button_rect.x && mouseX <= paste_button_rect.x + paste_button_rect.w &&
+                mouseY >= paste_button_rect.y && mouseY <= paste_button_rect.y + paste_button_rect.h) {
+                keyboard_paste_text(SDL_GetClipboardText());
+            }
         }
         if(e.type == SDL_MOUSEBUTTONUP) {
             if(power_button_pressed) {
@@ -211,27 +330,6 @@ void load_rom() {
     }
     fread(charset_rom, 1, 4096, fp);
     fclose(fp);
-}
-
-void vga_text_test() {
-    vga_C15_text_position(15, 40);
-    vga_C7_text_color(0b111, 0);
-    vga_C13_set_char('P');
-    vga_C12_text_write();
-    vga_C7_text_color(0b111000, 0);
-    vga_C13_set_char('D');
-    vga_C12_text_write();
-    vga_C7_text_color(0b11001001, 0);
-    vga_C13_set_char('C');
-    vga_C12_text_write();
-    vga_C7_text_color(255, 0);
-    vga_C13_set_char('3');
-    vga_C12_text_write();
-    vga_C13_set_char('2');
-    vga_C12_text_write();
-    vga_C7_text_color(0b111111, 0);
-    vga_C13_set_char(255);
-    vga_C12_text_write();
 }
 
 int display_init() {
@@ -287,6 +385,19 @@ int display_init() {
     power_button_tex = SDL_CreateTextureFromSurface(ren, power_button);
     SDL_FreeSurface(power_button);
 
+    SDL_Surface *paste_button = SDL_LoadBMP("res/paste.bmp");
+    if (paste_button == nullptr) {
+        std::cerr << "SDL_LoadBMP (res/paste.bmp) Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyTexture(power_button_tex);
+        SDL_DestroyTexture(tex);
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+    paste_button_tex = SDL_CreateTextureFromSurface(ren, paste_button);
+    SDL_FreeSurface(paste_button);
+
     init_pdc32_palette(pallete);
     return EXIT_SUCCESS;
 }
@@ -316,6 +427,7 @@ void display_update() {
     SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
+    SDL_RenderCopy(ren, paste_button_tex, nullptr, &paste_button_rect);
     SDL_RenderPresent(ren);
 
     // Un toque de delay, para que no ejecute mas de 60fps,
@@ -326,6 +438,12 @@ void display_update() {
     if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
         blink_status = !blink_status;
         last_blink = SDL_GetTicks();
+
+        if(!keycodes_paste.empty()) {
+            // 8 keycodes per second to avoid buffer overruns
+            keyboard_queue(keycodes_paste.front());
+            keycodes_paste.pop();
+        }
     }
 
     frames++;
