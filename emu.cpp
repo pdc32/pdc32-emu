@@ -258,7 +258,7 @@ void handleInstruction(const uint32_t instruction) {
     }
 }
 
-void loadProgram(const char* filename) {
+void load_program(const char* filename) {
     FILE *fp = fopen(filename, "rb");
 
     if (fp == nullptr) {
@@ -350,9 +350,9 @@ int main(int argc, char **argv) {
             cout << "usage: " << argv[0] << " [-h] [program.bin]" << endl;
             return 0;
         }
-        loadProgram(argv[1]);
+        load_program(argv[1]);
     } else {
-        loadProgram("firmware/PDC32-skipmemcheck.firmware");
+        load_program("firmware/PDC32-skipmemcheck.firmware");
     }
 
     display_init();
