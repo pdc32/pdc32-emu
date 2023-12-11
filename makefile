@@ -10,15 +10,19 @@ BIN_EXT := .exe
 
 EMU := $(BUILD_DIR)/emu$(BIN_EXT)
 ASM := $(BUILD_DIR)/asm$(BIN_EXT)
+DISASSEMBLER := $(BUILD_DIR)/disassembler$(BIN_EXT)
 
 TEST_BIN := $(BUILD_DIR)/$(TESTNAME)_test.bin
 
-all: $(EMU)
+all: $(EMU) $(ASM) $(DISASSEMBLER)
 
 $(EMU): emu.cpp vga.cpp spk.cpp alu.cpp tmr.cpp pwr.cpp uart.cpp eep.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 $(ASM): asm.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+$(DISASSEMBLER): disassembler.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(BUILD_DIR)/%.bin: prg/%.pdc $(ASM)
@@ -32,6 +36,12 @@ boot: $(EMU)
 
 memcheck: $(EMU)
 	$(EMU) firmware/PDC32.firmware
+
+testdisassembler: $(DISASSEMBLER)
+	$(DISASSEMBLER) firmware/PDC32.firmware
+
+testassembler: $(ASM) disassembled/firmware.asm
+	cat disassembled/firmware.asm | $(ASM) > $(BUILD_DIR)/assembled.bin
 
 testall: 
 	make test TESTNAME=base
