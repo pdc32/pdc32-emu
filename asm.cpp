@@ -125,6 +125,10 @@ void append_instruction(uint32_t arg) {
     program[pc++] = to_instruction(instructionType, arg);
 }
 
+void append_literal(uint32_t arg) {
+    program[pc++] = arg;
+}
+
 void process_label(string label) {
     label.pop_back(); // Remove ":" from the end
     if (label.empty() || label.find(':') != string::npos) {
@@ -187,14 +191,28 @@ uint32_t load_program_from_stdin(uint16_t startAddr) {
             if(token.find(':') != string::npos) {
                 process_label(token);
             } else {
-                bool isArg;
-                uint32_t arg = to_argument(token, &isArg);
-                if(isArg) {
-                    process_arg(token, arg);
-                } else if(is_instruction_type(token)) {
-                    process_instruction(token);
+                if(token[0] == '\'') {
+                    if(inInstruction) {
+                        cerr << "Literal cannot be inserted in the middle of an instruction";
+                        exit(1);
+                    }
+                    bool is_literal;
+                    uint32_t literal = to_argument(token.substr(1), &is_literal);
+                    if(!is_literal) {
+                        cerr << "Literal is invalid " << token;
+                        exit(1);
+                    }
+                    append_literal(literal);
                 } else {
-                    process_reference_to_label(token);
+                    bool isArg;
+                    uint32_t arg = to_argument(token, &isArg);
+                    if(isArg) {
+                        process_arg(token, arg);
+                    } else if(is_instruction_type(token)) {
+                        process_instruction(token);
+                    } else {
+                        process_reference_to_label(token);
+                    }
                 }
             }
         }
