@@ -79,7 +79,9 @@ SDL_Window* win;
 SDL_Renderer* ren;
 SDL_Texture* tex;
 SDL_Texture* power_button_tex;
+SDL_Texture* paste_button_tex;
 SDL_Rect power_button_rect = {screen_width-16,0,16,16};
+SDL_Rect paste_button_rect = {screen_width-16, 20,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
 
@@ -151,6 +153,24 @@ const char* format_as_hex_pairs(const char* sig_code) {
 }
 
 bool power_button_pressed = false;
+#include "char_to_scancode.h"
+
+std::queue<const char*> keycodes_paste;
+void keyboard_paste_text(char* text) {
+    for(size_t i=0;i<strlen(text);i++) {
+        SDL_Scancode scancode0 = SDL_SCANCODE_UNKNOWN, scancode1 = SDL_SCANCODE_UNKNOWN;
+        char_to_scancode(text[i], &scancode0, &scancode1);
+
+        if(scancode0 != SDL_SCANCODE_UNKNOWN) {
+            keycodes_paste.push(ps2_map.at(scancode0).key_make);
+            if(scancode1 != SDL_SCANCODE_UNKNOWN) {
+                keycodes_paste.push(ps2_map.at(scancode1).key_make);
+                keycodes_paste.push(ps2_map.at(scancode1).key_break);
+            }
+            keycodes_paste.push(ps2_map.at(scancode0).key_break);
+        }
+    }
+}
 
 int handle_events()
 {
@@ -184,6 +204,11 @@ int handle_events()
                 power_button_pressed = true;
                 pwr_button_press(true);
             }
+
+            if (mouseX >= paste_button_rect.x && mouseX <= paste_button_rect.x + paste_button_rect.w &&
+                mouseY >= paste_button_rect.y && mouseY <= paste_button_rect.y + paste_button_rect.h) {
+                keyboard_paste_text(SDL_GetClipboardText());
+            }
         }
         if(e.type == SDL_MOUSEBUTTONUP) {
             if(power_button_pressed) {
@@ -211,27 +236,6 @@ void load_rom() {
     }
     fread(charset_rom, 1, 4096, fp);
     fclose(fp);
-}
-
-void vga_text_test() {
-    vga_C15_text_position(15, 40);
-    vga_C7_text_color(0b111, 0);
-    vga_C13_set_char('P');
-    vga_C12_text_write();
-    vga_C7_text_color(0b111000, 0);
-    vga_C13_set_char('D');
-    vga_C12_text_write();
-    vga_C7_text_color(0b11001001, 0);
-    vga_C13_set_char('C');
-    vga_C12_text_write();
-    vga_C7_text_color(255, 0);
-    vga_C13_set_char('3');
-    vga_C12_text_write();
-    vga_C13_set_char('2');
-    vga_C12_text_write();
-    vga_C7_text_color(0b111111, 0);
-    vga_C13_set_char(255);
-    vga_C12_text_write();
 }
 
 int display_init() {
@@ -287,6 +291,19 @@ int display_init() {
     power_button_tex = SDL_CreateTextureFromSurface(ren, power_button);
     SDL_FreeSurface(power_button);
 
+    SDL_Surface *paste_button = SDL_LoadBMP("res/paste.bmp");
+    if (paste_button == nullptr) {
+        std::cerr << "SDL_LoadBMP (res/paste.bmp) Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyTexture(power_button_tex);
+        SDL_DestroyTexture(tex);
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+    paste_button_tex = SDL_CreateTextureFromSurface(ren, paste_button);
+    SDL_FreeSurface(paste_button);
+
     init_pdc32_palette(pallete);
     return EXIT_SUCCESS;
 }
@@ -316,6 +333,7 @@ void display_update() {
     SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
+    SDL_RenderCopy(ren, paste_button_tex, nullptr, &paste_button_rect);
     SDL_RenderPresent(ren);
 
     // Un toque de delay, para que no ejecute mas de 60fps,
@@ -326,6 +344,12 @@ void display_update() {
     if(SDL_TICKS_PASSED(SDL_GetTicks(), last_blink + 125)) {
         blink_status = !blink_status;
         last_blink = SDL_GetTicks();
+
+        if(!keycodes_paste.empty()) {
+            // 8 keycodes per second to avoid buffer overruns
+            keyboard_queue(keycodes_paste.front());
+            keycodes_paste.pop();
+        }
     }
 
     frames++;
