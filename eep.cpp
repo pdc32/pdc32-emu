@@ -17,10 +17,16 @@ uint32_t eep_addr = 0;
 uint32_t eep_read_data = 0;
 uint8_t eep_busy = 0;
 uint64_t eep_clear_ticks = 0;
+bool eep_active_last_frame = false;
 
 const string& internal_filename = "res/eeprom_int.bin";
 const string& external_filename = "res/eeprom_ext.bin";
 
+bool eep_was_active_last_frame() {
+    bool ret = eep_active_last_frame;
+    eep_active_last_frame = false;
+    return ret;
+}
 uint32_t eep_state() {
     return eep_busy;
 }
@@ -86,8 +92,9 @@ void eep_c4_serial_function(uint32_t function) {
         std::cerr << "UNKNOWN EEPROM OPERATION " << function << std::endl;
         return;
     }
+    eep_active_last_frame = true;
     eep_busy = 1;
-    eep_clear_ticks = get_tick_count() + instructions_per_second / 10000;   // 0.1 ms per operation (~10 per ms)
+    eep_clear_ticks = get_tick_count() + instructions_per_second / 40000;   // 0.1 ms per operation (~10 per ms)
 }
 
 void eep_process() {

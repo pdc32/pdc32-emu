@@ -11,6 +11,7 @@ void eep_c4_serial_function(uint32_t);
 void eep_process();
 void eep_init();
 void eep_teardown();
+bool eep_was_active_last_frame();
 
 constexpr uint32_t eep_state_offset = 14;
 constexpr uint32_t eep_read_internal = 1;

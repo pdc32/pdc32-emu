@@ -8,6 +8,8 @@
 #include <queue>
 
 #include "vga.h"
+
+#include "eep.h"
 #include "keyboard/scancodes.cpp"
 
 #include "pwr.h"
@@ -84,6 +86,9 @@ SDL_Rect power_button_rect = {screen_width-16,0,16,16};
 SDL_Rect paste_button_rect = {screen_width-16, 20,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
+SDL_Texture* led_off_tex;
+SDL_Texture* led_on_tex;
+SDL_Rect activity_led_rect = {screen_width-16,40,16,16};
 
 void init_pdc32_palette(uint32_t colors[256]) {
     //std::cerr << "PAL" << std::endl;
@@ -278,31 +283,46 @@ int display_init() {
         SDL_Quit();
         return EXIT_FAILURE;
     }
-
     SDL_Surface *power_button = SDL_LoadBMP("res/power.bmp");
     if (power_button == nullptr) {
         std::cerr << "SDL_LoadBMP (res/power.bmp) Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyTexture(tex);
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+    SDL_Surface *paste_button = SDL_LoadBMP("res/paste.bmp");
+    if (paste_button == nullptr) {
+        std::cerr << "SDL_LoadBMP (res/paste.bmp) Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+    SDL_Surface *led_off = SDL_LoadBMP("res/led_off.bmp");
+    if (led_off == nullptr) {
+        std::cerr << "SDL_LoadBMP (res/led_off.bmp) Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+    SDL_Surface *led_on = SDL_LoadBMP("res/led_on.bmp");
+    if (led_on == nullptr) {
+        std::cerr << "SDL_LoadBMP (res/led_on.bmp) Error: " << SDL_GetError() << std::endl;
         SDL_DestroyRenderer(ren);
         SDL_DestroyWindow(win);
         SDL_Quit();
         return EXIT_FAILURE;
     }
     power_button_tex = SDL_CreateTextureFromSurface(ren, power_button);
-    SDL_FreeSurface(power_button);
-
-    SDL_Surface *paste_button = SDL_LoadBMP("res/paste.bmp");
-    if (paste_button == nullptr) {
-        std::cerr << "SDL_LoadBMP (res/paste.bmp) Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyTexture(power_button_tex);
-        SDL_DestroyTexture(tex);
-        SDL_DestroyRenderer(ren);
-        SDL_DestroyWindow(win);
-        SDL_Quit();
-        return EXIT_FAILURE;
-    }
     paste_button_tex = SDL_CreateTextureFromSurface(ren, paste_button);
+    led_off_tex = SDL_CreateTextureFromSurface(ren, led_off);
+    led_on_tex = SDL_CreateTextureFromSurface(ren, led_on);
+    SDL_FreeSurface(power_button);
     SDL_FreeSurface(paste_button);
+    SDL_FreeSurface(led_off);
+    SDL_FreeSurface(led_on);
 
     init_pdc32_palette(pallete);
     return EXIT_SUCCESS;
@@ -334,6 +354,7 @@ void display_update() {
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
     SDL_RenderCopy(ren, paste_button_tex, nullptr, &paste_button_rect);
+    SDL_RenderCopy(ren, eep_was_active_last_frame() ? led_on_tex : led_off_tex, nullptr, &activity_led_rect);
     SDL_RenderPresent(ren);
 
     // Un toque de delay, para que no ejecute mas de 60fps,
