@@ -40,8 +40,9 @@ memcheck: $(EMU)
 testdisassembler: $(DISASSEMBLER)
 	$(DISASSEMBLER) firmware/PDC32.firmware
 
-testassembler: $(ASM) disassembled/firmware.asm
-	cat disassembled/firmware.asm | $(ASM) > $(BUILD_DIR)/assembled.bin
+fw: disassembled/firmware.asm $(ASM) 
+	cat $< | $(ASM) > $(BUILD_DIR)/fw-assembled.bin
+	cat firmware/checksum.md5 | awk '{print $$1, "$(BUILD_DIR)/fw-assembled.bin"}' | md5sum -c - 
 
 testall: 
 	make test TESTNAME=base
