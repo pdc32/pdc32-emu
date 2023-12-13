@@ -1,7 +1,7 @@
 # test name for `make test` (overridable by `make test TESTNAME=spk`)
 TESTNAME := vga
 
-CXXFLAGS := -std=c++11 -Wall -O2
+CXXFLAGS := -g3 -std=c++11 -Wall -O2
 SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
 BUILD_DIR := build

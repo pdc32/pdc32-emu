@@ -369,6 +369,8 @@ int main(int argc, char **argv) {
     }
     eep_teardown();
     display_teardown();
+    ds1387_teardown();
+
     if(debug) {
         dump_memory();
     }
