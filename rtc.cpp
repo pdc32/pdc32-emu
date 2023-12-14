@@ -44,18 +44,6 @@ void ds1387_init(){
     rtc_ds1387.nvram_file = fopen("res/rtc_nvram.bin", "rb");
     rtc_ds1387.old_value = 0xFF;
 
-    system_clock::time_point now = system_clock::now();
-    time_t tt = system_clock::to_time_t(now);
-    tm local_tm = *localtime(&tt);
-
-    SECONDS = local_tm.tm_sec;
-    MINUTES = local_tm.tm_min;
-    HOURS = local_tm.tm_hour;
-    DAY_OF_THE_WEEK = local_tm.tm_wday;
-    DAY_OF_THE_MONTH = local_tm.tm_mday;
-    MONTH = local_tm.tm_mon;
-    YEAR = uint8_t(0x00FF & local_tm.tm_year);
-
     if(rtc_ds1387.nvram_file == nullptr) {
 		std::cerr << "RTC: Cannot open nvram file. New one will be created" << std::endl;
 	}
@@ -66,7 +54,19 @@ void ds1387_init(){
 
 }
 
+void update_time_regs(){
+    system_clock::time_point now = system_clock::now();
+    time_t tt = system_clock::to_time_t(now);
+    tm local_tm = *localtime(&tt);
 
+    SECONDS = local_tm.tm_sec;
+    MINUTES = local_tm.tm_min;
+    HOURS = local_tm.tm_hour;
+    DAY_OF_THE_WEEK = local_tm.tm_wday;
+    DAY_OF_THE_MONTH = local_tm.tm_mday;
+    MONTH = local_tm.tm_mon;
+    YEAR = uint8_t(0x00FF & local_tm.tm_year);    
+}
 
 void ds1387_set_cmd(uint32_t bus){
     uint8_t connected_lines = bus & 0xFF;
@@ -90,7 +90,7 @@ void ds1387_set_cmd(uint32_t bus){
             rtc_ds1387.reg_address = rtc_ds1387.data_in;
 
             #ifdef DEBUG_RTC
-                std::cout << "RTC: Address strobe " << std::bitset<8>rtc_ds1387.regs_nvram_in) << std::endl;
+                std::cout << "RTC: Address strobe " << std::bitset<8>(rtc_ds1387.data_in) << std::endl;
                 switch (rtc_ds1387.reg_address)
                 {
                 case REG_REGISTER_A:
@@ -119,7 +119,7 @@ void ds1387_set_cmd(uint32_t bus){
                 std::cout << "RTC: Write choosen register " \
                     << std::bitset<8>(rtc_ds1387.reg_address) \
                     << ":: 0x" << std::hex << int(rtc_ds1387.reg_address) \
-                    << std::endl << "    value 0x" << std::hex << intrtc_ds1387.regs_nvram_in) \
+                    << std::endl << "    value 0x" << std::hex << int(rtc_ds1387.data_in) \
                     << std::endl;
             #endif
 
@@ -129,15 +129,20 @@ void ds1387_set_cmd(uint32_t bus){
         // Read choosen register
         if (connected_lines & WR && connected_lines & ~RD) {
 
+            if (rtc_ds1387.reg_address <= YEAR) {
+                update_time_regs();
+            };
+
             rtc_ds1387.data_out = rtc_ds1387.regs_nvram[rtc_ds1387.reg_address];
 
             #ifdef DEBUG_RTC
                 std::cout << "RTC: Read choosen register " \
                 << std::bitset<8>(rtc_ds1387.reg_address) \
                 << ":: 0x" << std::hex << int(rtc_ds1387.reg_address) \
-                << std::endl << "    value 0x" << std::hex << intrtc_ds1387.regs_nvram_out) \
+                << std::endl << "    value 0x" << std::hex << int(rtc_ds1387.data_out) \
                 << std::endl;
-            #endif            
+            #endif
+
             return;
         }
     }
@@ -184,8 +189,8 @@ void ds1387_set_cmd(uint32_t bus){
 uint32_t ds1387_get_data(){
     #ifdef DEBUG_RTC
         std::cout << "RTC: Read data latch " \
-            << std::bitset<8>rtc_ds1387.regs_nvram_out) \
-            << ":: 0x" << std::hex << intrtc_ds1387.regs_nvram_out) \
+            << std::bitset<8>(rtc_ds1387.data_out) \
+            << ":: 0x" << std::hex << int(rtc_ds1387.data_out) \
             << std::endl;
     #endif    
     return rtc_ds1387.data_out;
@@ -195,8 +200,8 @@ void ds1387_set_data(uint32_t bus){
     rtc_ds1387.data_in = bus & 0xFF;
     #ifdef DEBUG_RTC
         std::cout << "RTC: Set data latch " \
-        << std::bitset<8>rtc_ds1387.regs_nvram_in) \
-        << ":: 0x" << std::hex << intrtc_ds1387.regs_nvram_in) \
+        << std::bitset<8>(rtc_ds1387.data_in) \
+        << ":: 0x" << std::hex << int(rtc_ds1387.data_in) \
         << std::endl;
     #endif
 }
