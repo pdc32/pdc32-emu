@@ -1,7 +1,7 @@
 # test name for `make test` (overridable by `make test TESTNAME=spk`)
 TESTNAME := vga
 
-CXXFLAGS := -std=c++11 -Wall -O2
+CXXFLAGS := -g3 -std=c++11 -Wall -O2
 SDL2FLAGS=$(shell pkg-config sdl2 --cflags --libs)
 
 BUILD_DIR := build
@@ -16,7 +16,7 @@ TEST_BIN := $(BUILD_DIR)/$(TESTNAME)_test.bin
 
 all: $(EMU) $(ASM) $(DISASSEMBLER)
 
-$(EMU): emu.cpp vga.cpp spk.cpp alu.cpp tmr.cpp pwr.cpp uart.cpp eep.cpp
+$(EMU): emu.cpp vga.cpp spk.cpp alu.cpp tmr.cpp pwr.cpp uart.cpp eep.cpp rtc.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@ ${SDL2FLAGS}
 
 $(ASM): asm.cpp

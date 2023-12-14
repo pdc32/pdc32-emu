@@ -20,6 +20,7 @@ using namespace std;
 #include "pwr.h"
 #include "uart.h"
 #include "eep.h"
+#include "rtc.h"
 
 constexpr uint32_t program_len = 32768; // 32 K * 3 bytes
 constexpr uint32_t cache_len = 32768; // 128 KiB
@@ -71,7 +72,7 @@ uint32_t bus() {
         case REG_DRIVE_SERIAL:
             return eep_read();
         case REG_RTC:
-            return 0; // TODO: implement
+            return ds1387_get_data();
         case REG_UNUSED:
             return 0;
         case REG_KBD:
@@ -176,10 +177,10 @@ void handleInstruction(const uint32_t instruction) {
         keyboard_B5_send(command);
     } else if(type == B6_DATA_ADDR_RTC) {
         if(debug) printf("B6! %x ; RTC_ADDR_DATA\n", bus());
-        // TODO: implement
+        ds1387_set_data(bus());
     } else if(type == B7_OUT_DEBUG_COMMAND_RTC) {
         if(debug) printf("B7! %x ; RTC_CMD\n", bus());
-        // TODO: implement
+        ds1387_set_cmd(bus());
     } else if(type == B8_JL) {
         if(debug) printf("B8 %x ; JL %x\n", bus(), bus());
         if(alu_less_than()) jump_to(bus() % program_len);
@@ -355,6 +356,7 @@ int main(int argc, char **argv) {
         load_program("firmware/PDC32-skipmemcheck.firmware");
     }
 
+    ds1387_init();
     display_init();
     spk_init();
     eep_init();
@@ -367,6 +369,8 @@ int main(int argc, char **argv) {
     }
     eep_teardown();
     display_teardown();
+    ds1387_teardown();
+
     if(debug) {
         dump_memory();
     }
