@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
         }
         load_program(argv[1]);
     } else {
-        load_program("firmware/PDC32-skipmemcheck.firmware");
+        load_program("firmware/PDC32.firmware");
     }
 
     ds1387_init();
