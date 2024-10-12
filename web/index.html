@@ -3,20 +3,20 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>pdc32-emu</title>
+    <title>PDC32 Emulator</title>
     <style>
       body {
         background: #323232;
-        font-family: arial;
+        font-family: arial, sans-seriif;
         margin: 0;
-        padding: none;
+        padding: 0;
       }
 
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
       div.emscripten { text-align: center; }      
       div.emscripten_border { border: 1px solid black; }
       /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-      canvas.emscripten { border: 0px none; background-color: black; }
+      canvas.emscripten { border: 0 none; background-color: black; }
 
       #emscripten_logo {
         display: inline-block;
@@ -88,12 +88,11 @@
       #output {
         width: 100%;
         height: 200px;
-        margin: 0 auto;
-        margin-top: 10px;
-        border-left: 0px;
-        border-right: 0px;
-        padding-left: 0px;
-        padding-right: 0px;
+        margin: 10px auto 0;
+        border-left: 0;
+        border-right: 0;
+        padding-left: 0;
+        padding-right: 0;
         display: block;
         background-color: black;
         color: white;
@@ -117,7 +116,7 @@
 -->
 
     <div class="emscripten">
-      <progress value="0" max="100" id="progress" hidden=1></progress>
+      <progress value="0" max="100" id="progress" hidden="hidden"></progress>
     </div>
 
     
@@ -125,11 +124,15 @@
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     </div>
     <textarea id="output" rows="8"></textarea>
+    <textarea id="type" rows="8"></textarea>
+    <input type="button" id="copy" value="Type into emulator">
 
     <script type='text/javascript'>
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
       var spinnerElement = document.getElementById('spinner');
+      var typeElement = document.getElementById('type');
+      var copyButtonElement = document.getElementById('copy');
 
       var Module = {
         print: (function() {
@@ -196,6 +199,11 @@
           if (text) console.error('[post-exception status] ' + text);
         };
       };
+
+      copyButtonElement.onclick = () => {
+        Module.ccall("keyboard_paste_text", 'null', ['string'], [typeElement.value]);
+      };
+
     </script>
     <script async type="text/javascript" src="emu.js"></script>
   </body>
