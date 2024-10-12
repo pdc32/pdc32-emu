@@ -1,0 +1,14 @@
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    container:
+      image: emscripten/emsdk
+      
+    steps:
+    - uses: actions/checkout@v3
+    - run: make web
