@@ -161,18 +161,20 @@ bool power_button_pressed = false;
 #include "char_to_scancode.h"
 
 std::queue<const char*> keycodes_paste;
-void keyboard_paste_text(char* text) {
-    for(size_t i=0;i<strlen(text);i++) {
-        SDL_Scancode scancode0 = SDL_SCANCODE_UNKNOWN, scancode1 = SDL_SCANCODE_UNKNOWN;
-        char_to_scancode(text[i], &scancode0, &scancode1);
+extern "C" {
+    void keyboard_paste_text(char* text) {
+        for(size_t i=0;i<strlen(text);i++) {
+            SDL_Scancode scancode0 = SDL_SCANCODE_UNKNOWN, scancode1 = SDL_SCANCODE_UNKNOWN;
+            char_to_scancode(text[i], &scancode0, &scancode1);
 
-        if(scancode0 != SDL_SCANCODE_UNKNOWN) {
-            keycodes_paste.push(ps2_map.at(scancode0).key_make);
-            if(scancode1 != SDL_SCANCODE_UNKNOWN) {
-                keycodes_paste.push(ps2_map.at(scancode1).key_make);
-                keycodes_paste.push(ps2_map.at(scancode1).key_break);
+            if(scancode0 != SDL_SCANCODE_UNKNOWN) {
+                keycodes_paste.push(ps2_map.at(scancode0).key_make);
+                if(scancode1 != SDL_SCANCODE_UNKNOWN) {
+                    keycodes_paste.push(ps2_map.at(scancode1).key_make);
+                    keycodes_paste.push(ps2_map.at(scancode1).key_break);
+                }
+                keycodes_paste.push(ps2_map.at(scancode0).key_break);
             }
-            keycodes_paste.push(ps2_map.at(scancode0).key_break);
         }
     }
 }
