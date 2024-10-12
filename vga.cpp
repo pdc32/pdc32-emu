@@ -15,6 +15,10 @@
 #include "pwr.h"
 #include "emu.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 constexpr uint8_t text_columns = 80;
 constexpr uint8_t text_rows = 30;
 constexpr uint8_t char_height = 16;
