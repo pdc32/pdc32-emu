@@ -161,7 +161,12 @@ bool power_button_pressed = false;
 #include "char_to_scancode.h"
 
 std::queue<const char*> keycodes_paste;
-extern "C" void keyboard_paste_text(char* text) {
+
+#ifndef __EMSCRIPTEN__
+#define EMSCRIPTEN_KEEPALIVE
+#endif
+
+extern "C" EMSCRIPTEN_KEEPALIVE void keyboard_paste_text(char* text) {
     for(size_t i=0;i<strlen(text);i++) {
         SDL_Scancode scancode0 = SDL_SCANCODE_UNKNOWN, scancode1 = SDL_SCANCODE_UNKNOWN;
         char_to_scancode(text[i], &scancode0, &scancode1);
