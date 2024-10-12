@@ -1,0 +1,14 @@
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install SDL dev libs
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Run make
+        run: make
