@@ -132,11 +132,11 @@ void append_literal(uint32_t arg) {
 void process_label(string label) {
     label.pop_back(); // Remove ":" from the end
     if (label.empty() || label.find(':') != string::npos) {
-        cerr << "Invalid name for label: " + label;
+        cerr << "Invalid name for label: " << label;
         exit(1);
     }
     if (is_instruction_type(label)) {
-        cerr << "Found unexpected label with instruction name: " + label;
+        cerr << "Found unexpected label with instruction name: " << label;
         exit(1);
     }
     set_label(label, pc);
@@ -144,11 +144,11 @@ void process_label(string label) {
 
 bool process_arg(const string &token, uint32_t arg) {
     if(!inInstruction) {
-        cerr << "Found unexpected argument: " + token;
+        cerr << "Found unexpected argument: " << token;
         exit(1);
     }
     if(arg > 0xFFFF) {
-        cerr << "Argument does not fit in 16 bits: " + arg;
+        cerr << "Argument does not fit in 16 bits: " << arg;
         exit(1);
     }
     inInstruction = false;
@@ -171,7 +171,7 @@ void process_reference_to_label(const string &label) {
         labelIdx = put_label({label, false, 0});
     }
     if(labelIdx > 0xFFFF) {
-        cerr << "Label index does not fit in 16 bits: " + label;
+        cerr << "Label index does not fit in 16 bits: " << label;
         exit(1);
     }
     append_instruction(missing_label_address | labelIdx);
