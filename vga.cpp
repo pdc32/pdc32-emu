@@ -82,8 +82,8 @@ SDL_Renderer* ren;
 SDL_Texture* tex;
 SDL_Texture* power_button_tex;
 SDL_Texture* paste_button_tex;
-SDL_Rect power_button_rect = {screen_width-16,0,16,16};
-SDL_Rect paste_button_rect = {screen_width-16, 20,16,16};
+SDL_Rect power_button_rect = {screen_width-16,20,16,16};
+SDL_Rect paste_button_rect = {screen_width-16, 0,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
 SDL_Texture* led_off_tex;
@@ -210,10 +210,12 @@ int handle_events()
                 pwr_button_press(true);
             }
 
+#ifndef __EMSCRIPTEN__
             if (mouseX >= paste_button_rect.x && mouseX <= paste_button_rect.x + paste_button_rect.w &&
                 mouseY >= paste_button_rect.y && mouseY <= paste_button_rect.y + paste_button_rect.h) {
                 keyboard_paste_text(SDL_GetClipboardText());
             }
+#endif
         }
         if(e.type == SDL_MOUSEBUTTONUP) {
             if(power_button_pressed) {
@@ -353,7 +355,9 @@ void display_update() {
     SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
+#ifndef __EMSCRIPTEN__
     SDL_RenderCopy(ren, paste_button_tex, nullptr, &paste_button_rect);
+#endif
     SDL_RenderCopy(ren, eep_was_active_last_frame() ? led_on_tex : led_off_tex, nullptr, &activity_led_rect);
     SDL_RenderPresent(ren);
 

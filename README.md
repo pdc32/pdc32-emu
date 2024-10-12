@@ -2,11 +2,12 @@
 
 Microinstruction-level emulator for PDC32, a super cool post-apocalyptic computer built from scratch using recycled TTL chips by the awesome [Roberto Gudiño](https://twitter.com/computer_engin)
 
+[Click here to open emulator! (web-based, no need to install anything)](https://pdc32.github.io/pdc32-emu/)
+
+[Getting started guide](docs/getting_started.md)
+
 ![Screenshot](docs/screenshot.png)
 ![Photo of the computer](docs/photo.jpg)
-
-[You can emulate it from your browser clicking here! (No need to install anything)](https://pdc32.github.io/pdc32-emu/)
-[Getting started guide](docs/getting_started.md)
 
 How to use the computer?
 - [Operating System commands](docs/os_commands.md)
