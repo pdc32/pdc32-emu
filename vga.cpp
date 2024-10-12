@@ -82,13 +82,13 @@ SDL_Renderer* ren;
 SDL_Texture* tex;
 SDL_Texture* power_button_tex;
 SDL_Texture* paste_button_tex;
-SDL_Rect power_button_rect = {screen_width-16,20,16,16};
-SDL_Rect paste_button_rect = {screen_width-16, 0,16,16};
+SDL_Rect power_button_rect = {screen_width-16,0,16,16};
+SDL_Rect activity_led_rect = {screen_width-16,20,16,16};
+SDL_Rect paste_button_rect = {screen_width-16, 40,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
 SDL_Texture* led_off_tex;
 SDL_Texture* led_on_tex;
-SDL_Rect activity_led_rect = {screen_width-16,40,16,16};
 
 void init_pdc32_palette(uint32_t colors[256]) {
     //std::cerr << "PAL" << std::endl;
