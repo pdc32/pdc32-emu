@@ -81,7 +81,8 @@ void ds1387_set_cmd(uint32_t bus){
     
     // RTC operation. Get Calendar, Registers and user nram data
     if (~connected_lines & CS) {
-        #ifdef DEBUG_RTC std::cout << "RTC: Operation " << std::bitset<8>(connected_lines) << std::endl; 
+        #ifdef DEBUG_RTC
+        std::cout << "RTC: Operation " << std::bitset<8>(connected_lines) << std::endl;
         #endif
 
         // RTC Address strobe
@@ -147,16 +148,16 @@ void ds1387_set_cmd(uint32_t bus){
         }
     }
     else 
-        if (~connected_lines & WER && ~connected_lines & OER)
+        if (~connected_lines & WER && ~connected_lines & OER) {
             std::cerr << "RTC doesn't support write and read signals at same time" << std::endl;
-        else
+        } else {
             // AS0 latches the lower eight bits of static ram address
             if (rising_edges & AS0) {
                 rtc_ds1387.ram_address = rtc_ds1387.ram_address & 0xFF00;
                 rtc_ds1387.ram_address = rtc_ds1387.ram_address | rtc_ds1387.data_in;
-                #ifdef DEBUG_RTC
-                    std::cout << "RTC: AS0 Latch" << std::endl;
-                #endif
+#ifdef DEBUG_RTC
+                std::cout << "RTC: AS0 Latch" << std::endl;
+#endif
                 return;
             }
             // AS1 latches the upper four bits of static ram address
@@ -165,25 +166,26 @@ void ds1387_set_cmd(uint32_t bus){
                 upper_byte = upper_byte << 8;
                 rtc_ds1387.ram_address = rtc_ds1387.ram_address & 0x00FF;
                 rtc_ds1387.ram_address = rtc_ds1387.ram_address | upper_byte;
-                #ifdef DEBUG_RTC
-                    std::cout << "RTC: AS1 Latch" << std::endl;
-                #endif
+#ifdef DEBUG_RTC
+                std::cout << "RTC: AS1 Latch" << std::endl;
+#endif
                 return;
             }
             if (~connected_lines & WER) {
                 rtc_ds1387.static_ram[rtc_ds1387.ram_address] = rtc_ds1387.data_in;
-                #ifdef DEBUG_RTC
-                    std::cout << "RTC: Writing to static ram" << std::endl;
-                #endif
+#ifdef DEBUG_RTC
+                std::cout << "RTC: Writing to static ram" << std::endl;
+#endif
                 return;
             }
             if (~connected_lines & OER) {
                 rtc_ds1387.data_out = rtc_ds1387.static_ram[rtc_ds1387.ram_address];
-                #ifdef DEBUG_RTC
-                    std::cout << "RTC: Reading from static ram" << std::endl;
-                #endif
+#ifdef DEBUG_RTC
+                std::cout << "RTC: Reading from static ram" << std::endl;
+#endif
                 return;
             }
+        }
 }
 
 uint32_t ds1387_get_data(){

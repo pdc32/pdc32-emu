@@ -226,7 +226,7 @@ void eep_teardown() {
 }
 
 #ifdef __EMSCRIPTEN__
-void eep_download_web(){
+void eep_download() {
     void const *buffer = (void const *)eep_external;
     int32_t buffer_size = eep_external_len;
     EM_ASM(
@@ -237,7 +237,7 @@ void eep_download_web(){
     , buffer, buffer_size);
 }
 
-void eep_upload_web(){
+void eep_upload() {
     void const *buffer = (void const *)eep_external;
     int32_t buffer_size = eep_external_len;
     EM_ASM(
@@ -262,4 +262,39 @@ void eep_upload_web(){
         input.click();
     , buffer, buffer_size);
 }
+#else
+
+#include "portable-file-dialogs.h"
+
+void eep_download() {
+    auto destination = pfd::save_file("Select a file", "", {"BIN files", "*.bin"} ).result();
+    if (!destination.empty()) {
+        std::ofstream external_file(destination, std::ios::binary);
+        if (external_file) {
+            external_file.write(reinterpret_cast<const char*>(eep_external), sizeof(eep_external));
+            external_file.close();
+        }
+    }
+}
+
+void eep_upload() {
+    auto source = pfd::open_file("Select a file", "", {"BIN files", "*.bin"} ).result();
+    if (!source.empty()) {
+        std::ifstream external_file(source[0], std::ios::binary);
+        if (external_file) {
+            external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+            external_file.close();
+        }
+    }
+}
+
 #endif
+
+void eep_reload() {
+    std::ifstream external_file(external_filename, std::ios::binary);
+    if (external_file) {
+        cout << "EEP: Loaded default external memory" << endl;
+        external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+        external_file.close();
+    }
+}
