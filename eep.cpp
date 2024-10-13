@@ -231,7 +231,7 @@ void eep_download_web(){
     size_t buffer_size = eep_external_len;
     EM_ASM(
         var a = document.createElement('a');
-        a.download = UTF8ToString("eeprom_ext.bin");
+        a.download = "eeprom_ext.bin";
         a.href = URL.createObjectURL(new Blob([new Uint8Array(Module.HEAPU8.buffer, $1, $2)], {type: "application/octet-stream"}));
         a.click();
     , buffer, buffer_size);
