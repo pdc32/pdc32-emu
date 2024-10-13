@@ -228,18 +228,18 @@ void eep_teardown() {
 #ifdef __EMSCRIPTEN__
 void eep_download_web(){
     void const *buffer = (void const *)eep_external;
-    size_t buffer_size = eep_external_len;
+    int32_t buffer_size = eep_external_len;
     EM_ASM(
         var a = document.createElement('a');
         a.download = "eeprom_ext.bin";
-        a.href = URL.createObjectURL(new Blob([new Uint8Array(Module.HEAPU8.buffer, $1, $2)], {type: "application/octet-stream"}));
+        a.href = URL.createObjectURL(new Blob([new Uint8Array(Module.HEAPU8.buffer, $0, $1)], {type: "application/octet-stream"}));
         a.click();
     , buffer, buffer_size);
 }
 
 void eep_upload_web(){
     void const *buffer = (void const *)eep_external;
-    size_t buffer_size = eep_external_len;
+    int32_t buffer_size = eep_external_len;
     EM_ASM(
         var input = document.createElement('input');
         input.type = 'file';
