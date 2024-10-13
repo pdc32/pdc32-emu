@@ -88,11 +88,13 @@ SDL_Texture* power_button_tex;
 SDL_Texture* paste_button_tex;
 SDL_Texture* load_button_tex;
 SDL_Texture* store_button_tex;
+SDL_Texture* reload_button_tex;
 SDL_Rect power_button_rect = {screen_width-16,0,16,16};
 SDL_Rect activity_led_rect = {screen_width-16,20,16,16};
 SDL_Rect load_button_rect = {screen_width-16,40,16,16};
 SDL_Rect store_button_rect = {screen_width-16,60,16,16};
-SDL_Rect paste_button_rect = {screen_width-16, 80,16,16};
+SDL_Rect reload_button_rect = {screen_width-16,80,16,16};
+SDL_Rect paste_button_rect = {screen_width-16, 100,16,16};
 uint32_t pallete[256];
 bool blink_status = false;
 SDL_Texture* led_off_tex;
@@ -225,22 +227,25 @@ int handle_events()
                 pwr_button_press(true);
             }
 
+            if (mouseX >= store_button_rect.x && mouseX <= store_button_rect.x + store_button_rect.w &&
+                mouseY >= store_button_rect.y && mouseY <= store_button_rect.y + store_button_rect.h) {
+                eep_download();
+            }
+            if (mouseX >= load_button_rect.x && mouseX <= load_button_rect.x + load_button_rect.w &&
+                mouseY >= load_button_rect.y && mouseY <= load_button_rect.y + load_button_rect.h) {
+                eep_upload();
+            }
+            if (mouseX >= reload_button_rect.x && mouseX <= reload_button_rect.x + reload_button_rect.w &&
+                mouseY >= reload_button_rect.y && mouseY <= reload_button_rect.y + reload_button_rect.h) {
+                eep_reload();
+            }
+
 #ifndef __EMSCRIPTEN__
             if (mouseX >= paste_button_rect.x && mouseX <= paste_button_rect.x + paste_button_rect.w &&
                 mouseY >= paste_button_rect.y && mouseY <= paste_button_rect.y + paste_button_rect.h) {
                 keyboard_paste_text(SDL_GetClipboardText());
             }
-#else
-            if (mouseX >= store_button_rect.x && mouseX <= store_button_rect.x + store_button_rect.w &&
-                mouseY >= store_button_rect.y && mouseY <= store_button_rect.y + store_button_rect.h) {
-                eep_download_web();
-            }
-            if (mouseX >= load_button_rect.x && mouseX <= load_button_rect.x + load_button_rect.w &&
-                mouseY >= load_button_rect.y && mouseY <= load_button_rect.y + load_button_rect.h) {
-                eep_upload_web();
-            }
 #endif
-
 
         }
         if(e.type == SDL_MOUSEBUTTONUP) {
@@ -335,6 +340,14 @@ int display_init() {
         SDL_Quit();
         return EXIT_FAILURE;
     }
+    SDL_Surface *reload_button = SDL_LoadBMP("res/reload.bmp");
+    if (reload_button == nullptr) {
+        std::cerr << "SDL_LoadBMP (res/reload.bmp) Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
     SDL_Surface *paste_button = SDL_LoadBMP("res/paste.bmp");
     if (paste_button == nullptr) {
         std::cerr << "SDL_LoadBMP (res/paste.bmp) Error: " << SDL_GetError() << std::endl;
@@ -362,6 +375,7 @@ int display_init() {
     power_button_tex = SDL_CreateTextureFromSurface(ren, power_button);
     load_button_tex = SDL_CreateTextureFromSurface(ren, load_button);
     store_button_tex = SDL_CreateTextureFromSurface(ren, store_button);
+    reload_button_tex = SDL_CreateTextureFromSurface(ren, reload_button);
     paste_button_tex = SDL_CreateTextureFromSurface(ren, paste_button);
     led_off_tex = SDL_CreateTextureFromSurface(ren, led_off);
     led_on_tex = SDL_CreateTextureFromSurface(ren, led_on);
@@ -403,6 +417,7 @@ void display_update() {
     SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
     SDL_RenderCopy(ren, load_button_tex, nullptr, &load_button_rect);
     SDL_RenderCopy(ren, store_button_tex, nullptr, &store_button_rect);
+    SDL_RenderCopy(ren, reload_button_tex, nullptr, &reload_button_rect);
 #ifndef __EMSCRIPTEN__
     SDL_RenderCopy(ren, paste_button_tex, nullptr, &paste_button_rect);
 #endif

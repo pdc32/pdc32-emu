@@ -226,7 +226,7 @@ void eep_teardown() {
 }
 
 #ifdef __EMSCRIPTEN__
-void eep_download_web(){
+void eep_download() {
     void const *buffer = (void const *)eep_external;
     int32_t buffer_size = eep_external_len;
     EM_ASM(
@@ -237,7 +237,7 @@ void eep_download_web(){
     , buffer, buffer_size);
 }
 
-void eep_upload_web(){
+void eep_upload() {
     void const *buffer = (void const *)eep_external;
     int32_t buffer_size = eep_external_len;
     EM_ASM(
@@ -263,3 +263,12 @@ void eep_upload_web(){
     , buffer, buffer_size);
 }
 #endif
+
+void eep_reload() {
+    std::ifstream external_file(external_filename, std::ios::binary);
+    if (external_file) {
+        cout << "EEP: Loaded default external memory" << endl;
+        external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+        external_file.close();
+    }
+}

@@ -13,8 +13,9 @@ void eep_init();
 void eep_teardown();
 bool eep_was_active_last_frame();
 
-void eep_download_web();
-void eep_upload_web();
+void eep_download();
+void eep_upload();
+void eep_reload();
 
 constexpr uint32_t eep_state_offset = 14;
 constexpr uint32_t eep_read_internal = 1;
