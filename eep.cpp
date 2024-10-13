@@ -168,7 +168,7 @@ extern "C" {
         }
     }
 
-    void EMSCRIPTEN_KEEPALIVE eep_teardown_web(){
+    void EMSCRIPTEN_KEEPALIVE eep_store_web(){
         // Store external memory to web file
         std::ofstream external_file(external_filename_web, std::ios::binary);
         if (external_file) {
