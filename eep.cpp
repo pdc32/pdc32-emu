@@ -262,6 +262,32 @@ void eep_upload() {
         input.click();
     , buffer, buffer_size);
 }
+#else
+
+#include "portable-file-dialogs.h"
+
+void eep_download() {
+    auto destination = pfd::save_file("Select a file", "", {"BIN files", "*.bin"} ).result();
+    if (!destination.empty()) {
+        std::ofstream external_file(destination, std::ios::binary);
+        if (external_file) {
+            external_file.write(reinterpret_cast<const char*>(eep_external), sizeof(eep_external));
+            external_file.close();
+        }
+    }
+}
+
+void eep_upload() {
+    auto source = pfd::open_file("Select a file", "", {"BIN files", "*.bin"} ).result();
+    if (!source.empty()) {
+        std::ifstream external_file(source[0], std::ios::binary);
+        if (external_file) {
+            external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+            external_file.close();
+        }
+    }
+}
+
 #endif
 
 void eep_reload() {
