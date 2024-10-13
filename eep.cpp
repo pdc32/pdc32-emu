@@ -6,6 +6,10 @@
 #include <string>
 using namespace std;
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 constexpr uint32_t eep_internal_len = 8192;
 uint8_t eep_internal[eep_internal_len];
 
@@ -21,6 +25,7 @@ bool eep_active_last_frame = false;
 
 const string& internal_filename = "res/eeprom_int.bin";
 const string& external_filename = "res/eeprom_ext.bin";
+const string& external_filename_web = "work/eeprom_ext.bin";
 
 bool eep_was_active_last_frame() {
     bool ret = eep_active_last_frame;
@@ -105,6 +110,17 @@ void eep_process() {
 }
 
 void eep_init() {
+
+#ifdef __EMSCRIPTEN__
+    EM_ASM(
+        FS.mkdir('/work');
+        FS.mount(IDBFS, {}, '/work');
+
+        FS.syncfs(true, function (err) {
+        });
+    );
+#endif
+
     // Load internal memory from file
     std::ifstream internal_file(internal_filename, std::ios::binary);
     if (internal_file) {
@@ -124,8 +140,53 @@ void eep_init() {
         // File doesn't exist, initialize to 0xFF
         memset(eep_external, 0xFF, sizeof(eep_external));
     }
+
+#ifdef __EMSCRIPTEN__
+    std::ifstream external_file_web(external_filename_web, std::ios::binary);
+    if (external_file_web) {
+        external_file_web.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+        external_file_web.close();
+    }
+#endif
 }
+
+#ifdef __EMSCRIPTEN__
+void EMSCRIPTEN_KEEPALIVE eep_teardown_web(){
+    // Store external memory to web file
+    std::ofstream external_file(external_filename_web, std::ios::binary);
+    if (external_file) {
+        external_file.write(reinterpret_cast<const char*>(eep_external), sizeof(eep_external));
+        external_file.close();
+    } else {
+        std::cerr << "Error: Could not open external file for writing." << std::endl;
+    }
+
+    EM_ASM(
+        FS.syncfs(function (err) {
+        });
+    );
+}
+#endif
+
 void eep_teardown() {
+#ifndef __EMSCRIPTEN__
+    const SDL_MessageBoxButtonData buttons[] = {
+            { 0, 0, "Yes" },
+            { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "No" },
+    };
+    const SDL_MessageBoxData messageboxdata = {SDL_MESSAGEBOX_INFORMATION,
+                                        NULL,
+                                        "Save memory",
+                                        "Do you want to save the contents of the memory?",
+                                        SDL_arraysize(buttons),
+                                        buttons,
+                                        NULL};
+    int button_id;
+    SDL_ShowMessageBox(&messageboxdata, &button_id);
+    if (button_id == 0) {
+        return;
+    }
+
     // Store internal memory to file
     std::ofstream internal_file(internal_filename, std::ios::binary);
     if (internal_file) {
@@ -143,4 +204,5 @@ void eep_teardown() {
     } else {
         std::cerr << "Error: Could not open external file for writing." << std::endl;
     }
+#endif
 }
