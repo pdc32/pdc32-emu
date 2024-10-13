@@ -232,12 +232,14 @@ void eep_download_web(){
     EM_ASM(
         var a = document.createElement('a');
         a.download = UTF8ToString("eeprom_ext.bin");
-        a.href = URL.createObjectURL(new Blob([new Uint8Array(Module.HEAPU8.buffer, buffer, buffer_size)], {type: UTF8ToString("application/octet-stream")}));
+        a.href = URL.createObjectURL(new Blob([new Uint8Array(Module.HEAPU8.buffer, $1, $2)], {type: "application/octet-stream"}));
         a.click();
-    );
+    , buffer, buffer_size);
 }
 
 void eep_upload_web(){
+    void const *buffer = (void const *)eep_external;
+    size_t buffer_size = eep_external_len;
     EM_ASM(
         var input = document.createElement('input');
         input.type = 'file';
@@ -246,12 +248,18 @@ void eep_upload_web(){
             var file = input.files[0];
             var reader = new FileReader();
             reader.onload = function(event) {
-                var buffer = new Uint8Array(event.target.result);
-                Module.HEAPU8.set(buffer, eep_external);
+                var arrayBuffer = event.target.result;
+                var uint8Array = new Uint8Array(arrayBuffer);
+                if (uint8Array.length <= $1) {
+                    Module.HEAPU8.set(uint8Array, $0);
+                    console.log("File uploaded successfully");
+                } else {
+                    console.log("File size does not match expected " + $1);
+                }
             };
             reader.readAsArrayBuffer(file);
         };
         input.click();
-    );
+    , buffer, buffer_size);
 }
 #endif
