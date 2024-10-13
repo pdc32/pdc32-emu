@@ -209,7 +209,7 @@
         Module.ccall("keyboard_paste_text", 'null', ['string'], [typeElement.value]);
       };
       window.addEventListener("beforeunload", function (event) {
-        Module._eep_teardown_web(); // Ensure file changes are saved
+        Module.ccall("eep_teardown_web", 'null', [], []); // Ensure file changes are saved
       });
     </script>
     <script async type="text/javascript" src="emu.js"></script>
