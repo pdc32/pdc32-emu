@@ -117,6 +117,7 @@ void eep_init() {
         FS.mount(IDBFS, {}, '/work');
 
         FS.syncfs(true, function (err) {
+            Module._eep_load_continue();
         });
     );
 #endif
@@ -131,19 +132,23 @@ void eep_init() {
         memset(eep_internal, 0xFF, sizeof(eep_internal));
     }
 
+#ifndef __EMSCRIPTEN__
     // Load external memory from file
     std::ifstream external_file(external_filename, std::ios::binary);
     if (external_file) {
-        cout << "EEP: Loaded external memory from resources" << endl;
         external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
         external_file.close();
     } else {
         // File doesn't exist, initialize to 0xFF
         memset(eep_external, 0xFF, sizeof(eep_external));
     }
+#endif
+}
 
 #ifdef __EMSCRIPTEN__
-    for(int i=0;i<4*2;i++){
+extern "C" {
+
+    void EMSCRIPTEN_KEEPALIVE eep_load_continue() {
         std::ifstream external_file_web(external_filename_web, std::ios::binary);
         if (external_file_web) {
             cout << "EEP: Loaded external memory from IDBFS" << endl;
@@ -151,15 +156,19 @@ void eep_init() {
             external_file_web.close();
             break;
         } else {
-            cout << "EEP: Failed to load external memory from IDBFS (attempt " << i << ")" << endl;
+            std::ifstream external_file(external_filename, std::ios::binary);
+            if (external_file) {
+                cout << "EEP: Loaded default external memory" << endl;
+                external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+                external_file.close();
+            } else {
+                // File doesn't exist, initialize to 0xFF
+                cout << "EEP: Initialized external memory with 0xFFs" << endl;
+                memset(eep_external, 0xFF, sizeof(eep_external));
+            }
         }
-        SDL_Delay(250);
     }
-#endif
-}
 
-#ifdef __EMSCRIPTEN__
-extern "C" {
     void EMSCRIPTEN_KEEPALIVE eep_teardown_web(){
         // Store external memory to web file
         std::ofstream external_file(external_filename_web, std::ios::binary);
