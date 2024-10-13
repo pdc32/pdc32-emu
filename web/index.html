@@ -204,13 +204,12 @@
           if (text) console.error('[post-exception status] ' + text);
         };
       };
-
       copyButtonElement.onclick = () => {
         Module.ccall("keyboard_paste_text", 'null', ['string'], [typeElement.value]);
       };
-      window.addEventListener("beforeunload", function (event) {
-        Module.ccall("eep_teardown_web", 'null', [], []); // Ensure file changes are saved
-      });
+      setInterval(() => {
+        Module.ccall("eep_store_web", 'null', [], []);
+      }, 5000);
     </script>
     <script async type="text/javascript" src="emu.js"></script>
   </body>

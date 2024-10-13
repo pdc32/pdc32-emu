@@ -230,7 +230,18 @@ int handle_events()
                 mouseY >= paste_button_rect.y && mouseY <= paste_button_rect.y + paste_button_rect.h) {
                 keyboard_paste_text(SDL_GetClipboardText());
             }
+#else
+            if (mouseX >= store_button_rect.x && mouseX <= store_button_rect.x + store_button_rect.w &&
+                mouseY >= store_button_rect.y && mouseY <= store_button_rect.y + store_button_rect.h) {
+                eep_download_web();
+            }
+            if (mouseX >= load_button_rect.x && mouseX <= load_button_rect.x + load_button_rect.w &&
+                mouseY >= load_button_rect.y && mouseY <= load_button_rect.y + load_button_rect.h) {
+                eep_upload_web();
+            }
 #endif
+
+
         }
         if(e.type == SDL_MOUSEBUTTONUP) {
             if(power_button_pressed) {
