@@ -143,13 +143,17 @@ void eep_init() {
     }
 
 #ifdef __EMSCRIPTEN__
-    std::ifstream external_file_web(external_filename_web, std::ios::binary);
-    if (external_file_web) {
-        cout << "EEP: Loaded external memory from IDBFS" << endl;
-        external_file_web.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
-        external_file_web.close();
-    } else {
-        cout << "EEP: Failed to load external memory from IDBFS" << endl;
+    for(int i=0;i<4*2;i++){
+        std::ifstream external_file_web(external_filename_web, std::ios::binary);
+        if (external_file_web) {
+            cout << "EEP: Loaded external memory from IDBFS" << endl;
+            external_file_web.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
+            external_file_web.close();
+            break;
+        } else {
+            cout << "EEP: Failed to load external memory from IDBFS (attempt " << i << ")" << endl;
+        }
+        SDL_Delay(250);
     }
 #endif
 }
