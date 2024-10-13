@@ -25,7 +25,7 @@ bool eep_active_last_frame = false;
 
 const string& internal_filename = "res/eeprom_int.bin";
 const string& external_filename = "res/eeprom_ext.bin";
-const string& external_filename_web = "work/eeprom_ext.bin";
+const string& external_filename_web = "/work/eeprom_ext.bin";
 
 bool eep_was_active_last_frame() {
     bool ret = eep_active_last_frame;
@@ -134,6 +134,7 @@ void eep_init() {
     // Load external memory from file
     std::ifstream external_file(external_filename, std::ios::binary);
     if (external_file) {
+        cout << "EEP: Loaded external memory from resources" << endl;
         external_file.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
         external_file.close();
     } else {
@@ -144,8 +145,11 @@ void eep_init() {
 #ifdef __EMSCRIPTEN__
     std::ifstream external_file_web(external_filename_web, std::ios::binary);
     if (external_file_web) {
+        cout << "EEP: Loaded external memory from IDBFS" << endl;
         external_file_web.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
         external_file_web.close();
+    } else {
+        cout << "EEP: Failed to load external memory from IDBFS" << endl;
     }
 #endif
 }
