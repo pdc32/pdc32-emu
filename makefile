@@ -56,7 +56,7 @@ compile_flags.txt: makefile
 
 .PHONY: web
 web:
-	EM_CACHE=$(PWD)/.emscripten_cache/ emmake make BIN_EXT=".js" CXXFLAGS="-sUSE_SDL=2 -sTOTAL_MEMORY=67108864 -sEXPORTED_RUNTIME_METHODS=['ccall'] --preload-file firmware/ --preload-file font/ --preload-file res/"
+	EM_CACHE=$(PWD)/.emscripten_cache/ emmake make BIN_EXT=".js" CXXFLAGS="-sUSE_SDL=2 -sTOTAL_MEMORY=67108864 -sEXPORTED_RUNTIME_METHODS=['ccall'] --preload-file firmware/ --preload-file font/ --preload-file res/ -lidbfs.js"
 	mv build/*.js build/*.wasm build/*.data web/
 
 server:
