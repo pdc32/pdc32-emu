@@ -154,7 +154,6 @@ extern "C" {
             cout << "EEP: Loaded external memory from IDBFS" << endl;
             external_file_web.read(reinterpret_cast<char*>(eep_external), sizeof(eep_external));
             external_file_web.close();
-            break;
         } else {
             std::ifstream external_file(external_filename, std::ios::binary);
             if (external_file) {
