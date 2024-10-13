@@ -204,7 +204,6 @@
           if (text) console.error('[post-exception status] ' + text);
         };
       };
-
       copyButtonElement.onclick = () => {
         Module.ccall("keyboard_paste_text", 'null', ['string'], [typeElement.value]);
       };

@@ -224,3 +224,16 @@ void eep_teardown() {
     }
 #endif
 }
+
+#ifdef __EMSCRIPTEN__
+void eep_download_web(){
+    void const *buffer = (void const *)eep_external;
+    size_t buffer_size = eep_external_len;
+    EM_ASM(
+      var a = document.createElement('a');
+      a.download = UTF8ToString("eeprom_ext.bin");
+      a.href = URL.createObjectURL(new Blob([new Uint8Array(Module.HEAPU8.buffer, buffer, buffer_size)], {type: UTF8ToString("application/octet-stream")}));
+      a.click();
+    );
+}
+#endif
