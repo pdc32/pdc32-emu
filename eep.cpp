@@ -151,20 +151,22 @@ void eep_init() {
 }
 
 #ifdef __EMSCRIPTEN__
-void EMSCRIPTEN_KEEPALIVE eep_teardown_web(){
-    // Store external memory to web file
-    std::ofstream external_file(external_filename_web, std::ios::binary);
-    if (external_file) {
-        external_file.write(reinterpret_cast<const char*>(eep_external), sizeof(eep_external));
-        external_file.close();
-    } else {
-        std::cerr << "Error: Could not open external file for writing." << std::endl;
-    }
+extern "C" {
+    void EMSCRIPTEN_KEEPALIVE eep_teardown_web(){
+        // Store external memory to web file
+        std::ofstream external_file(external_filename_web, std::ios::binary);
+        if (external_file) {
+            external_file.write(reinterpret_cast<const char*>(eep_external), sizeof(eep_external));
+            external_file.close();
+        } else {
+            std::cerr << "Error: Could not open external file for writing." << std::endl;
+        }
 
-    EM_ASM(
-        FS.syncfs(function (err) {
-        });
-    );
+        EM_ASM(
+            FS.syncfs(function (err) {
+            });
+        );
+    }
 }
 #endif
 
