@@ -229,7 +229,7 @@ void handleInstruction(const uint32_t instruction) {
         vga_C7_text_color(fg, bg);
     } else if(type == C8_VGA_WRITE_VRAM) {
         if(debug) printf("C8! ; VGA_WRITE_RAM\n");
-        // TODO: implement
+        vga_C8_write_vram();
     } else if(type == C9_VGA_FUNCTION) {
         if(debug) printf("C9 %x ; VGA_FUNCTION %d\n", bus(), bus());
         vga_C9_set_mode(bus() & vga_C9_mode_bits);
@@ -238,7 +238,9 @@ void handleInstruction(const uint32_t instruction) {
         vga_C10_blink(bus() & vga_blink_bit);
     } else if(type == C11_VGA_PIXEL_COLOR) {
         if(debug) printf("C11! %x ; VGA_COLOR\n", bus());
-        // TODO: implement
+        printf("C11! %x ; VGA_COLOR\n", bus());
+        printf("C11! %x ; VGA_COLOR_PIXEL\n", bus() & 0xff);
+        vga_C11_pixel_color(bus() & 0xff);
     } else if(type == C12_VGA_TEXT_WRITE) {
         if(debug) printf("C12 ; VGA_TEXT_WRITE\n");
         vga_C12_text_write();
@@ -247,7 +249,16 @@ void handleInstruction(const uint32_t instruction) {
         vga_C13_set_char(bus() & 0xff);
     } else if(type == C14_VGA_PIXEL_POS) {
         if(debug) printf("C14! %x ; VGA_PIXEL_POS\n", bus());
-        // TODO: implement
+        printf("C14! %x ; VGA_PIXEL_POS\n", bus());
+        //Para Y va de b10-b18 para cubrir 480 píxeles .
+        uint16_t pos_y = (bus() >> 10) & 0x01FF;
+        //X de b0-b9 para cubrir 640 pixeles por línea
+        uint16_t pos_x = bus() & 0x03FF;
+        
+        printf("C14! %i ; VGA_PIXEL_POS_Y\n", pos_y);
+        printf("C14! %i ; VGA_PIXEL_POS_X\n", pos_x);
+
+        vga_C14_pixel_position(bus());
     } else if(type == C15_VGA_TEXT_POS) {
         if(debug) printf("C15 %x ; VGA_TEXT_POS\n", bus());
         uint8_t row = (bus() >> 7) & 0x1f;
