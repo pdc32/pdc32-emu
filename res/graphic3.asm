@@ -58,8 +58,7 @@ ADD calc_aux#,b_const#
 MUL calc_aux#,640
 ADD calc_aux#,incr#
 LEA C14,calc_aux#
-ROUT 77,172;
-ROUT 77,140;
+ROUT 77,172 ;ROUT 77,140;
 INC incr#
 JG incr#,var_xf# 
 JMP draw_l()
@@ -82,8 +81,7 @@ MOV calc_aux#,incr#
 MUL calc_aux#,640
 ADD calc_aux#,aux_0#
 LEA C14,calc_aux#
-ROUT 77,172;
-ROUT 77,140; 
+ROUT 77,172 ;ROUT 77,140;
 INC incr#
 JG incr#,var_yf#
 JMP draw_v()
@@ -148,7 +146,7 @@ LEA C9,0
 ROUT 77,147
 
 vga_on0#:
-ROUT 87,232 ; p57E8
+ROUT 87,232 ; p57E8 ;
 MOV flag#,[65387]
 AND flag#,12288
 JE flag#,0
@@ -160,7 +158,7 @@ LEA C9,1
 ROUT 77,147
 
 vga_on1#: 
-ROUT 87,232 ; p57E8
+ROUT 87,232 ; p57E8 ;
 MOV flag#,[65387]
 AND flag#,12288
 JE flag#,4096

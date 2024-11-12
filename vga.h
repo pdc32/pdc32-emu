@@ -35,11 +35,8 @@ void vga_C10_blink(bool enable);
 void vga_C11_pixel_color(uint8_t color);
 void vga_C12_text_write();
 void vga_C13_set_char(uint8_t character);
-void vga_C14_pixel_position(uint16_t pos_y, uint16_t pos_x);
 void vga_C14_pixel_position(uint32_t abs_pos);
-
 void vga_C15_text_position(uint8_t row, uint8_t col);
-
 
 uint8_t vga_get_mode();
 

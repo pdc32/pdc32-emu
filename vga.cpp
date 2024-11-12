@@ -35,8 +35,6 @@ struct vga_character {
 vga_character text_vram[text_rows][text_columns];
 uint8_t charset_rom[256][char_height];
 
-uint16_t pixel_pos_y;
-uint16_t pixel_pos_x;
 uint32_t pixel_abs_pos;
 uint8_t pixel_color;
 
@@ -76,9 +74,19 @@ void vga_C7_text_color(uint8_t fg, uint8_t bg) {
 }
 
 void vga_C8_write_vram(){
-    //printf("C8 pos_y:%i, pos_x:%i\n", pixel_pos_y, pixel_pos_x);
-
     framebuffer[pixel_abs_pos] = pallete[pixel_color];
+}
+
+uint8_t vga_get_mode() {
+    return vga_mode;
+}
+
+void vga_C9_set_mode(uint8_t mode) {
+    vga_mode = mode;
+}
+
+void vga_C10_blink(bool enable) {
+    enable_blink = enable;
 }
 
 void vga_C11_pixel_color(uint8_t color){
@@ -105,17 +113,6 @@ void vga_C14_pixel_position(uint32_t abs_pos){
     pixel_abs_pos = abs_pos;
 }
 
-void vga_C14_pixel_position(uint16_t pos_y, uint16_t pos_x) {
-    if (pos_y >= screen_height) {
-        std::cerr << "y axis is too large: " << (int)pos_y << std::endl;
-    }
-    pixel_pos_y = pos_y;
-    if (pos_x >= screen_width) {
-        std::cerr << "x axis is too large: " << (int)pos_x << std::endl;
-    }
-    pixel_pos_x = pos_x;
-}
-
 void vga_C15_text_position(uint8_t row, uint8_t col) {
     if (row >= text_rows) {
         std::cerr << "row too large: " << (int)row << std::endl;
@@ -125,10 +122,6 @@ void vga_C15_text_position(uint8_t row, uint8_t col) {
         std::cerr << "col too large: " << (int)col << std::endl;
     }
     text_cursor_col = col;
-}
-
-void vga_C10_blink(bool enable) {
-    enable_blink = enable;
 }
 
 SDL_Window* win;
@@ -187,13 +180,7 @@ void vga_update_framebuffer(uint32_t *framebuffer) {
             }
         row_start += text_columns * 8 * char_height;
         }
-    }/*
-    else if (vga_mode == 0x00)
-    {
-        for (u_int32_t i=0; i < screen_height*screen_width;i++){
-            framebuffer[i] = framebuffer[i] | pixelbuffer[i];
-        }
-    }*/
+    }
 }
 
 const char* format_as_hex_pairs(const char* sig_code) {
@@ -453,7 +440,7 @@ void display_update() {
     }
     vga_update_framebuffer(framebuffer);
 
-    SDL_UpdateTexture(tex, NULL, framebuffer, screen_width *4);
+    SDL_UpdateTexture(tex, NULL, framebuffer, screen_width * 4);
     SDL_RenderCopy(ren, tex, nullptr, nullptr);
     SDL_RenderCopy(ren, power_button_tex, nullptr, &power_button_rect);
     SDL_RenderCopy(ren, load_button_tex, nullptr, &load_button_rect);
@@ -500,14 +487,6 @@ void display_teardown() {
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
-}
-
-uint8_t vga_get_mode() {
-    return vga_mode;
-}
-
-void vga_C9_set_mode(uint8_t mode) {
-    vga_mode = mode;
 }
 
 std::queue<uint32_t> keycodes_queue;
