@@ -39,6 +39,11 @@ MOV deltax#,var_xf#
 SUB deltax#,var_xi# 
 MOV divn#,deltax# 
 MOV divs#,deltay#
+JE deltax#,0
+JMP sigcheck()
+MOV deltax#,1
+
+sigcheck():
 CALL check
 JG divn#,divs#
 JMP draw_v0()
@@ -164,4 +169,20 @@ AND flag#,12288
 JE flag#,4096
 JMP vga_on1# 
 RET
+
+pixel0(): ; imprime con color ;
+LEA C11,col_pix#
+MOV calc_aux#,pix_y#
+MUL calc_aux#,640
+ADD calc_aux#,pix_x#
+LEA C14,calc_aux#
+ROUT 77,168
+JMP endline()
     
+pixel1(): ; imprime sin color ;
+MOV calc_aux#,pix_y#
+MUL calc_aux#,640
+ADD calc_aux#,pix_x#
+LEA C14,calc_aux#
+ROUT 77,172
+JMP endline()

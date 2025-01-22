@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
 
     ds1387_init();
     display_init();
-    //spk_init();
+    spk_init();
     eep_init();
     #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(em_mainloop, 0, 1);

@@ -1,5 +1,5 @@
 .emscripten_cache/
 .idea/
 .vscode/
-
+*.geany
 compile_flags.txt
