@@ -201,7 +201,7 @@ void eep_teardown() {
                                         NULL};
     int button_id;
     SDL_ShowMessageBox(&messageboxdata, &button_id);
-    if (button_id == 0) {
+    if (button_id == 1) {
         return;
     }
 
@@ -210,6 +210,7 @@ void eep_teardown() {
     if (internal_file) {
         internal_file.write(reinterpret_cast<const char*>(eep_internal), sizeof(eep_internal));
         internal_file.close();
+        std::cerr << "Internal memory saved." << std::endl;
     } else {
         std::cerr << "Error: Could not open internal file for writing." << std::endl;
     }

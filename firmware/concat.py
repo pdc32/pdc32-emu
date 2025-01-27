@@ -1,7 +1,7 @@
 import os
 from intelhex import IntelHex
 
-fw_filenames = ["Firmware_PDC32_B.hex", "Firmware_PDC32_C.hex", "Firmware_PDC32_A.hex"]
+fw_filenames = ["1.5B/Firmware_PDC_32_B15B.hex", "1.5B/Firmware_PDC_32_C15B.hex", "1.5B/Firmware_PDC_32_A15B.hex"]
 firmware_size_words = 32*1024;
 
 firmwares = []
