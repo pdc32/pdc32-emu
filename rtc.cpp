@@ -64,8 +64,8 @@ void update_time_regs(){
     HOURS = local_tm.tm_hour;
     DAY_OF_THE_WEEK = local_tm.tm_wday;
     DAY_OF_THE_MONTH = local_tm.tm_mday;
-    MONTH = local_tm.tm_mon;
-    YEAR = uint8_t(0x00FF & local_tm.tm_year);    
+    MONTH = local_tm.tm_mon + 1;
+    YEAR = uint8_t(local_tm.tm_year % 100);    
 }
 
 void ds1387_set_cmd(uint32_t bus){
