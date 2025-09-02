@@ -5,7 +5,7 @@ def swap_bit_order(byte):
     return int(format(byte, '08b')[::-1], 2)
 
 ih = IntelHex()
-ih.loadhex("PDC_Files_4.hex")
+ih.loadhex("latest_files.hex")
 
 out = bytearray()
 for byte_idx in range(len(ih)):
